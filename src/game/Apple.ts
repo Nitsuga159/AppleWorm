@@ -1,29 +1,22 @@
 import { IItem } from "../motor/Items/IItem";
 import Square from "../motor/Shape/Square";
 import Worm from "./Worm";
-import loop from "./loop";
+import CONFIG from "./constants";
 
-export interface IApple extends Omit<IItem, "target" | "group"> {
+export interface IApple extends Omit<IItem, "target" | "group" | "width" | "height"> {
 
 }
 
 export default class Apple extends Square {
-    public static readonly GROUP = loop.getNextGroup()
-    private image = new Image()
-
     constructor(data: IApple) {
-        super({ ...data, group: Apple.GROUP})
+        super({ ...data, textureId: "apple", width: CONFIG.SIZE, height: CONFIG.SIZE, group: [Apple] })
 
-        this.image.src = "../../apple.png"
+        this.fill = "red"
     }
 
     public canEat(worm: Worm) {
         const head = worm.getHead()
 
         return this.matchLocation(head)
-    }
-
-    public paint(ctx: CanvasRenderingContext2D): void {
-        ctx.drawImage(this.image, this.getX() - 2, this.getY() - 2)
     }
 }

@@ -1,20 +1,20 @@
 import Gravity from "../motor/Functions/Gravity/Gravity";
+import BaseItem from "../motor/Items/BaseItem";
 import { DIRECTION } from "../motor/Items/DefaultCollisions";
 import Item from "../motor/Items/Item";
 import Loop from "../motor/Loop";
-import Square from "../motor/Shape/Square";
 import Block from "./Block";
 import Stone from "./Stone";
 import WormPiece from "./WormPiece";
 import CONFIG from "./constants";
-import loop from "./loop";
+import game from "./game";
 
 export default class Worm {
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
     private pieces: WormPiece[]
 
     constructor(pieces: WormPiece[]) {
-        pieces.forEach(p => p.addFunctionality(this.gravity))
+        pieces.forEach(p => game.add(p.addFunctionality(this.gravity)))
 
         this.pieces = pieces
     }
@@ -28,17 +28,17 @@ export default class Worm {
         this.pieces.forEach(i => i.setY(Math.round(i.getY() / CONFIG.SIZE) * CONFIG.SIZE))
     }
 
-    public checkCollision(group: number) {
+    public checkCollision() {
         this.pieces.forEach(p => {
             p.getTransitionX()?.update()
             p.getTransitionY()?.update()
         })
 
         this.pieces.forEach(p => {
-            loop.forEachTarget(p.getTarget(), (item) => {
-                if (item === p || p.isMoving()) return;
+            game.forEachItemConstructor(p.getTarget(), ({ item }) => {
+                if (p.isMoving()) return;
     
-                if(p.itemCollision(p, item) === DIRECTION.TOP && item.getGroup() & group) {
+                if(p.itemCollision(p, item) === DIRECTION.TOP) {
                     this.onCollide()
                 }
             })
@@ -63,20 +63,32 @@ export default class Worm {
 
     public canMoveX(newX: number): Promise<boolean> {
         return new Promise(resolve => {
-            const copy = this.getHead().copy()
-            copy.setX(copy.getX() + newX)
+            const headLocation = this.getHead().getLocation()
+            headLocation[0] += newX
             
-            loop.forEachTarget(this.getHead().getTarget(), (item) => {
-                if(item.getGroup() & Block.GROUP && item.matchLocation(copy)) {
+            game.forEachItemConstructor(this.getHead().getTarget(), ({ item, stop }) => {
+                if(item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
                     resolve(false)
-                } else if(item.getGroup() & Stone.GROUP && item.matchLocation(copy)) {
-                    const nextToStone = copy.copy().setX(copy.getX() + newX);
+                    stop()
+                } else if(item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
+                    const nextToStone = headLocation
+                    nextToStone[0] += newX
+                    
+                    let found = false
+                    game.forEachItemConstructor(item.getTarget(), ({ item: currentItem, stop }) => {
+                        if(BaseItem.matchLocation(nextToStone, currentItem.getLocation())) {
+                            console.log("match", currentItem)
+                            stop()
+                            found = true
+                        }
+                    });
 
-                    if(loop.getContainer().getItems().some(i => i.matchLocation(nextToStone)) && !this.getEnd()?.matchLocation(nextToStone)) return resolve(false);
-
+                    if(found) return resolve(false);
+                    
                     (item as Stone).setTransitionX(item.getX() + newX);
                     (item as Stone).getGravity().setIsEnabled(false);
                     resolve(true)
+                    stop()
                 }
             })
 
@@ -84,31 +96,42 @@ export default class Worm {
         })
     }
 
-    public canMoveY(newY: number) {
+    public canMoveY(newY: number): Promise<boolean> {
         return new Promise(resolve => {
-            const copy = this.getHead().copy()
-            copy.setY(copy.getY() + newY)
-            Loop.getLoops()[0].forEachTarget(this.getHead().getTarget(), (item) => {
-                if((item.getGroup() & Block.GROUP) !== 0 && item.matchLocation(copy)) {
+            const headLocation = this.getHead().getLocation()
+            headLocation[1] += newY
+            
+            game.forEachItemConstructor(this.getHead().getTarget(), ({ item, stop }) => {
+                if(item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
                     resolve(false)
-                } else if(item.getGroup() & Stone.GROUP && item.matchLocation(copy)) {
-                    const nextToStone = copy.copy().setY(copy.getY() + newY);
-
-                    if(loop.getContainer().getItems().some(i => i.matchLocation(nextToStone))) return resolve(false);
-
+                    stop()
+                } else if(item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
+                    const nextToStone = headLocation
+                    nextToStone[1] += newY
+                    
+                    if(game.get().some(i => BaseItem.matchLocation(nextToStone, i.getLocation()))) {
+                        stop()
+                        return resolve(false)
+                    };
+                    
                     (item as Stone).setTransitionY(item.getY() + newY);
-                    (item as Stone).getGravity().setIsEnabled(false)
+                    (item as Stone).getGravity().setIsEnabled(false);
                     resolve(true)
+                    stop()
                 }
             })
 
             resolve(true)
         })
+    }
+
+    public isMoving() {
+        return this.pieces.some(p => p.isMoving())
     }
 
     public enlarge() {
         const newPiece = this.pieces.at(-1)!.copy().addFunctionality(this.gravity)
-        loop.getContainer().addItem(newPiece)
+        game.add(newPiece)
         this.pieces.push(newPiece as WormPiece)
     }
 }

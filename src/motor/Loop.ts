@@ -1,16 +1,16 @@
-import Base from "./Base"
 import Canvas from "./Canvas"
 import Container from "./Container"
 import Item from "./Items/Item"
 
-export default class Loop extends Base {
+export default class Loop extends Container {
+    private sky: HTMLImageElement = document.getElementById("sky") as HTMLImageElement
+
     constructor() {
         super()
 
         Loop.instances.push(this)
     }
 
-    private readonly container = new Container()
     private static instances: Loop[] = []
 
     public execute(cb: (loop: Loop) => void) {
@@ -19,9 +19,9 @@ export default class Loop extends Base {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        this.container.getItems().sort((i1, i2) => i1.getY() < i2.getY() ? -1 : 1)
+        this.get().sort((i1, i2) => i1.getY() < i2.getY() ? -1 : 1)
 
-        this.container.getItems()
+        this.get()
             .filter(f => f.shouldPaint())
             .forEach(item => {
                 item.getFunctionalities().forEach(f => f.isEnabled() && f.applicate(item, this))
@@ -30,8 +30,10 @@ export default class Loop extends Base {
             
             cb(this)
             
-            this.container.getItems()
+            this.get()
             .filter(f => f.shouldPaint())
+            .slice()
+            .sort((a, b) => a.getPaintPriority() < b.getPaintPriority() ? -1 : 1)
             .forEach(item => {
                 ctx.save()
                 item.paint(ctx)
@@ -41,16 +43,16 @@ export default class Loop extends Base {
         requestAnimationFrame(() => this.execute.call(this, cb))
     }
 
-    public forEachTarget(target: number, callback: (item: Item, index: number) => void) {
-        this.container.getItems().forEach((item, index) => {
-            if ((item.getGroup() & target) !== 0) {
-                callback(item, index)
+    public forEachItemConstructor(target: (typeof Item)[], callback: ({ item, stop }: {item: Item, stop: () => void}) => void): void {
+        let stopLoop = false
+        for(let itemConstructor of target) {
+            for(let item of itemConstructor.getAllItems() || []) {
+                callback({ item, stop: () => stopLoop = true })
             }
-        })
-    }
-
-    public getContainer() {
-        return this.container
+            if(stopLoop) {
+                break
+            }
+        }
     }
 
     public static getLoops() {

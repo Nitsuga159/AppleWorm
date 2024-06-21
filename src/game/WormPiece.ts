@@ -1,29 +1,23 @@
+import game from "./game";
 import { IItem } from "../motor/Items/IItem";
 import Square from "../motor/Shape/Square";
 import Apple from "./Apple";
 import Block from "./Block";
 import Stone from "./Stone";
-import loop from "./loop";
+import CONFIG from "./constants";
+import Transition from "../motor/Items/Transition";
+import Gravity from "../motor/Functions/Gravity/Gravity";
 
-export interface IWormPiece extends Omit<IItem, "target" | "group"> {
+export interface IWormPiece extends Omit<IItem, "target" | "group" | "width" | "height"> {
 
 }
 
 export default class WormPiece extends Square {
-    public static readonly GROUP = loop.getNextGroup()
-    private image = new Image()
-
     constructor(data: IWormPiece) {
-        super({ ...data, group: WormPiece.GROUP, target: Stone.GROUP | Block.GROUP | Apple.GROUP })
-
-        this.image.src = "../../worm.png"
-    }
-
-    public paint(ctx: CanvasRenderingContext2D): void {
-        ctx.drawImage(this.image, this.getX() - 4, this.getY() - 4)
+        super({ ...data, paintPriority: 9, width: CONFIG.SIZE, height: CONFIG.SIZE, textureId: "worm", group: [WormPiece], target: [Stone, Block, Apple] })
     }
 
     public copy(): WormPiece {
-        return super.copy().setGroup(WormPiece.GROUP).setTarget(Stone.GROUP | Block.GROUP | Apple.GROUP) as WormPiece
+        return new WormPiece({ x: this.getX(), y: this.getY() }).setGroup([WormPiece]).setTarget([Stone, Block, Apple])
     }
 }

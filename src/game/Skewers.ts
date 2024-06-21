@@ -1,23 +1,24 @@
+import BaseItem from "../motor/Items/BaseItem";
 import { IItem } from "../motor/Items/IItem";
 import Square from "../motor/Shape/Square";
 import Worm from "./Worm";
-import WormPiece from "./WormPiece";
-import loop from "./loop";
+import CONFIG from "./constants";
 
-export interface ISkewers extends Omit<IItem, "target" | "group"> {}
+export interface ISkewers extends Omit<IItem, "target" | "group" | "width" | "height"> {}
 
 export default class Skewers extends Square {
-    public static readonly GROUP = loop.getNextGroup()
 
     constructor(data: ISkewers) {
-        super({ ...data, group: Skewers.GROUP })
+        super({ ...data, paintPriority: 10, textureId: "skewers", width: CONFIG.SIZE, height: CONFIG.SIZE, group: [Skewers] })
+
+        this.fill = "orange"
     }
 
     public static checkCollision(worm: Worm) {
-        loop.forEachTarget(Skewers.GROUP, (skewers) => {
+        Skewers.getAllItems()?.forEach((skewers) => {
             skewers = skewers as Skewers
-
-            if(worm.getPieces().some(pice => pice.matchLocation(skewers))) {
+            if(worm.getPieces().some(piece => BaseItem.matchLocation(skewers.getLocation(), piece.getLocation()))) {
+                
                 window.location.reload()
             }
         })

@@ -3,15 +3,20 @@ import Item from "./Items/Item";
 export default class Container {
     private items: Item[] = []
 
-    public getItems() {
+    public get() {
         return this.items
     }
 
-    public addItem(item: Item) {
+    public add(item: Item) {
         this.items.push(item)
     }
 
-    public removeItem(item: Item) {
-        this.items = this.items.filter(i => i !== item)
+    public remove(item: Item) {
+        this.items = this.items.filter(i => i !== item);
+        (item.constructor as typeof Item).removeItem(item)
+    }
+
+    public reset() {
+        this.items = []
     }
 }

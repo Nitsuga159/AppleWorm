@@ -1,4 +1,4 @@
-import { IBounds } from "./IBaseItem"
+import { IBounds, ILocation } from "./IBaseItem"
 
 export default class BaseItem {
     private width: number
@@ -107,5 +107,13 @@ export default class BaseItem {
 
     public getPrevY() {
         return this.prevY
+    }
+
+    public isInArea({ x, y }: ILocation) {
+        return x >= this.getX() && x <= (this.getX() + this.getWidth()) && y >= this.getY() && y <= (this.getY() + this.getHeight())
+    }
+
+    public static matchLocation(loc1: [x: number, y: number], loc2: [x: number, y: number]) {
+        return loc1[0] === loc2[0] && loc1[1] === loc2[1]
     }
 }
