@@ -1,19 +1,19 @@
 import { IItem } from "../motor/Items/IItem";
 import Square from "../motor/Shape/Square";
-import BaseObject from "./BaseObject";
+import Worm from "./Worm";
 import CONFIG from "./constants";
 import { IPSeudoItem } from "./interfaces/IPseudoItem";
 
-export default class Block extends BaseObject {
-    constructor({ index, spin, ...data }: IPSeudoItem) {
+export default class Cloud extends Square {
+    constructor({ index, ...data}: IPSeudoItem) {
         super({ 
             ...data, 
             width: CONFIG.SIZE, 
             height: CONFIG.SIZE, 
-            frame: { index, textureId: "block", columns: 6, rows: 5, frameSize: 50, spin },
-            group: [Block] 
+            paintPriority: -1,
+            frame: { index, textureId: "cloud",  columns: 1, frameSize: 100 },
         })
 
-        this.fill = "#420"
+        this.fill = "red"
     }
 }

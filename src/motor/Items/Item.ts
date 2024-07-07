@@ -1,40 +1,37 @@
+import { Class } from "../../game/interfaces/Class";
 import Function from "../Functions/Function";
+import BaseItem from "./BaseItem";
 import DefaultCollisions from "./DefaultCollisions";
-import { IBounds } from "./IBaseItem";
-import { IFrame, IItem } from "./IItem";
+import Frame from "./Frame";
+import { IItem } from "./IItem";
 
-export default abstract class Item extends DefaultCollisions {
+export default abstract class Item extends Frame(DefaultCollisions(BaseItem)) {
+    private readonly functionalities: Function[] = []
     private static ALL_ITEMS: Item[]
     protected fill: string | undefined
-    private group: (typeof Item)[]
-    private target: (typeof Item)[]
-    private readonly functionalities: Function[] = []
-    private frame?: IFrame
-    private texture?: HTMLImageElement
+    private group: Class<Item>[]
+    private target: Class<Item>[]
     private paintPriority: number
+    private debug: boolean
 
-    constructor({ fill, group, target, paintPriority, textureId, frame, ...data }: IItem) {
+    constructor({ fill, group, target, debug, paintPriority, ...data }: IItem) {
         super(data)
 
         if (!(this.constructor as any).ALL_ITEMS) {
             (this.constructor as any).ALL_ITEMS = []
         }
             
+        this.debug = debug || false
         this.fill = fill
         this.target = target || []
         this.group = group || []
-        this.frame = frame
-        this.paintPriority = paintPriority || 0
-        
-        if(textureId) {
-            this.texture = (document.getElementById(textureId) as HTMLImageElement)
-        }
+        this.paintPriority = paintPriority || 0;
 
         (this.constructor as any).ALL_ITEMS.push(this)
     }
 
-    public static getAllItems(): Item[] | undefined {
-        return this.ALL_ITEMS
+    public static getAllItems(): Item[] {
+        return this.ALL_ITEMS || []
     }
 
     public static resetAllItems() {
@@ -45,17 +42,13 @@ export default abstract class Item extends DefaultCollisions {
         this.ALL_ITEMS = this.ALL_ITEMS.filter(i => i !== item)
     }
 
-    public getTexture() {
-        return this.texture
-    }
-
-    public setGroup(group: (typeof Item)[]) {
+    public setGroup(group: Class<Item>[]) {
         this.group = group
 
         return this
     }
 
-    public setTarget(target: (typeof Item)[]) {
+    public setTarget(target: Class<Item>[]) {
         this.target = target
 
         return this
@@ -85,10 +78,6 @@ export default abstract class Item extends DefaultCollisions {
         return this.functionalities
     }
 
-    public getFrame() {
-        return this.frame
-    }
-
     public addFunctionality(functionality: Function) {
         this.functionalities.push(functionality)
 
@@ -99,14 +88,12 @@ export default abstract class Item extends DefaultCollisions {
         return this.getX() === item.getX() && this.getY() === item.getY()
     }
 
-    public getFrameCoordinates() {
-        if(!this.frame) return null;
+    public isDebug() {
+        return this.debug
+    }
 
-        const { index, columns = 1, size } = this.frame
-
-        const x = ((index - 1) % columns) * size;
-        const y = Math.floor((index - 1) / columns) * size;
-        return { x, y };
+    public setIsDebug(debug: boolean) {
+        this.debug = debug
     }
 
     abstract update(): void

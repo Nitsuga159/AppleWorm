@@ -7,7 +7,7 @@ import Block from "./Block";
 import Stone from "./Stone";
 import WormPiece from "./WormPiece";
 import CONFIG from "./constants";
-import game from "./game";
+import game, { WormGame } from "./game";
 
 export default class Worm {
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
@@ -19,10 +19,14 @@ export default class Worm {
         this.pieces = pieces
     }
 
+    public setFalling(enabled: boolean) {
+        this.gravity.setIsEnabled(enabled)
+    }
+
     public isFalling() {
         return this.gravity.isEnabled()
     }
- 
+
     private onCollide() {
         this.gravity.setIsEnabled(false)
         this.pieces.forEach(i => i.setY(Math.round(i.getY() / CONFIG.SIZE) * CONFIG.SIZE))
@@ -35,10 +39,15 @@ export default class Worm {
         })
 
         this.pieces.forEach(p => {
-            game.forEachItemConstructor(p.getTarget(), ({ item }) => {
+            game.forEachItemConstructor(p.getTarget(), item => {
                 if (p.isMoving()) return;
+
+                if (p.itemCollision(p, item) === DIRECTION.TOP) {
+                    if(
+                        item instanceof Stone && 
+                        game.getFrom([item.getX(), item.getY() + CONFIG.SIZE]) instanceof WormPiece
+                    ) return;
     
-                if(p.itemCollision(p, item) === DIRECTION.TOP) {
                     this.onCollide()
                 }
             })
@@ -61,68 +70,51 @@ export default class Worm {
         return this.pieces.at(-1)
     }
 
-    public canMoveX(newX: number): Promise<boolean> {
-        return new Promise(resolve => {
-            const headLocation = this.getHead().getLocation()
-            headLocation[0] += newX
-            
-            game.forEachItemConstructor(this.getHead().getTarget(), ({ item, stop }) => {
-                if(item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                    resolve(false)
-                    stop()
-                } else if(item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                    const nextToStone = headLocation
-                    nextToStone[0] += newX
-                    
-                    let found = false
-                    game.forEachItemConstructor(item.getTarget(), ({ item: currentItem, stop }) => {
-                        if(BaseItem.matchLocation(nextToStone, currentItem.getLocation())) {
-                            console.log("match", currentItem)
-                            stop()
-                            found = true
-                        }
-                    });
+    private canMove(plus: number, dir: "X" | "Y") {
+        const headLocation = this.getHead().getLocation()
+        const index = dir === "X" ? 0 : 1
+        headLocation[index] += plus
 
-                    if(found) return resolve(false);
-                    
-                    (item as Stone).setTransitionX(item.getX() + newX);
-                    (item as Stone).getGravity().setIsEnabled(false);
-                    resolve(true)
-                    stop()
+        let canMove = true
+
+        game.forEachItemConstructor(this.getHead().getTarget(), item => {
+            if (item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
+                canMove = false
+                return true
+            }
+
+            if (item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
+                const nextToStone = headLocation
+                nextToStone[index] += plus
+
+                let found = false
+                game.forEachItemConstructor(item.getTarget(), (currentItem) => {
+                    if (item !== currentItem && BaseItem.matchLocation(nextToStone, currentItem.getLocation())) {
+                        found = true
+                        return true
+                    }
+                });
+
+                if (found) {
+                    canMove = false
+                    return true
                 }
-            })
 
-            resolve(true)
+                (item as Stone).getGravity().setIsEnabled(false);
+                (item as Stone)[`setTransition${dir}`](item[`get${dir}`]() + plus, () => (item as Stone).getGravity().setIsEnabled(true));
+                return true
+            }
         })
+
+        return canMove
     }
 
-    public canMoveY(newY: number): Promise<boolean> {
-        return new Promise(resolve => {
-            const headLocation = this.getHead().getLocation()
-            headLocation[1] += newY
-            
-            game.forEachItemConstructor(this.getHead().getTarget(), ({ item, stop }) => {
-                if(item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                    resolve(false)
-                    stop()
-                } else if(item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                    const nextToStone = headLocation
-                    nextToStone[1] += newY
-                    
-                    if(game.get().some(i => BaseItem.matchLocation(nextToStone, i.getLocation()))) {
-                        stop()
-                        return resolve(false)
-                    };
-                    
-                    (item as Stone).setTransitionY(item.getY() + newY);
-                    (item as Stone).getGravity().setIsEnabled(false);
-                    resolve(true)
-                    stop()
-                }
-            })
+    public canMoveX(newX: number): boolean {
+        return this.canMove(newX, "X")
+    }
 
-            resolve(true)
-        })
+    public canMoveY(newY: number): boolean {
+        return this.canMove(newY, "Y")
     }
 
     public isMoving() {

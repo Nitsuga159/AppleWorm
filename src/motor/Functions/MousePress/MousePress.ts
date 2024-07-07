@@ -1,3 +1,4 @@
+import CONFIG from "../../../game/constants";
 import Canvas from "../../Canvas";
 import EventController from "../../EventController";
 import BaseItem from "../../Items/BaseItem";
@@ -12,17 +13,15 @@ export default class MousePress {
     constructor({ baseItem, onChange }: { baseItem: BaseItem, onChange?: (clicked: boolean, ev: MouseEvent) => void }) {
         this.onChange = onChange
         this.onMouseDown = (ev) => {
-            console.log(ev.pageX, ev.pageY, Canvas.getCanvas().getBoundingClientRect())
-            console.log(baseItem.isInArea({ x: ev.pageX, y: ev.pageY }))
             let prevState = this.pressed
             this.pressed = baseItem.isInArea({ x: ev.clientX, y: ev.clientY })
 
-            if(prevState !== this.pressed) this.onChange??(this.pressed, ev)
+            if(prevState !== this.pressed) this.onChange?.(this.pressed, ev)
         }
         this.onMouseUp = (ev) => {
             if(this.pressed) {
                 this.pressed = false
-                this.onChange??(this.pressed, ev)
+                this.onChange?.(this.pressed, ev)
             }
         }
 

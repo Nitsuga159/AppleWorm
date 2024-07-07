@@ -1,15 +1,20 @@
 import { IItem } from "../motor/Items/IItem";
 import Square from "../motor/Shape/Square";
+import BaseObject from "./BaseObject";
 import Worm from "./Worm";
 import CONFIG from "./constants";
+import { IPSeudoItem } from "./interfaces/IPseudoItem";
 
-export interface IApple extends Omit<IItem, "target" | "group" | "width" | "height"> {
-
-}
-
-export default class Apple extends Square {
-    constructor(data: IApple) {
-        super({ ...data, textureId: "apple", width: CONFIG.SIZE, height: CONFIG.SIZE, group: [Apple] })
+export default class Apple extends BaseObject {
+    constructor({ index, spin, ...data}: IPSeudoItem) {
+        super({ 
+            ...data, 
+            width: CONFIG.SIZE, 
+            height: CONFIG.SIZE, 
+            paintPriority: 6,
+            frame: { index, textureId: "apple",  columns: 1, frameSize: 55, spin },
+            group: [Apple] 
+        })
 
         this.fill = "red"
     }

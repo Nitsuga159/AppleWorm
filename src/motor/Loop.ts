@@ -1,10 +1,9 @@
+import { Class } from "../game/interfaces/Class"
 import Canvas from "./Canvas"
 import Container from "./Container"
 import Item from "./Items/Item"
 
 export default class Loop extends Container {
-    private sky: HTMLImageElement = document.getElementById("sky") as HTMLImageElement
-
     constructor() {
         super()
 
@@ -22,7 +21,6 @@ export default class Loop extends Container {
         this.get().sort((i1, i2) => i1.getY() < i2.getY() ? -1 : 1)
 
         this.get()
-            .filter(f => f.shouldPaint())
             .forEach(item => {
                 item.getFunctionalities().forEach(f => f.isEnabled() && f.applicate(item, this))
                 item.update()
@@ -43,14 +41,12 @@ export default class Loop extends Container {
         requestAnimationFrame(() => this.execute.call(this, cb))
     }
 
-    public forEachItemConstructor(target: (typeof Item)[], callback: ({ item, stop }: {item: Item, stop: () => void}) => void): void {
-        let stopLoop = false
+    public forEachItemConstructor(target: Class<Item>[], callback: (item: Item) => boolean | void): void {
         for(let itemConstructor of target) {
-            for(let item of itemConstructor.getAllItems() || []) {
-                callback({ item, stop: () => stopLoop = true })
-            }
-            if(stopLoop) {
-                break
+            for(let item of (itemConstructor as unknown as typeof Item).getAllItems() || []) {
+                if(callback(item)) {
+                    return;
+                }
             }
         }
     }

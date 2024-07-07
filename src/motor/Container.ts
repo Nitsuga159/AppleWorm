@@ -1,3 +1,4 @@
+import { Class } from "../game/interfaces/Class";
 import Item from "./Items/Item";
 
 export default class Container {
@@ -13,7 +14,7 @@ export default class Container {
 
     public remove(item: Item) {
         this.items = this.items.filter(i => i !== item);
-        (item.constructor as typeof Item).removeItem(item)
+        (item.constructor as (typeof Item)).removeItem(item)
     }
 
     public reset() {

@@ -5,19 +5,33 @@ import Apple from "./Apple";
 import Block from "./Block";
 import Stone from "./Stone";
 import CONFIG from "./constants";
-import Transition from "../motor/Items/Transition";
-import Gravity from "../motor/Functions/Gravity/Gravity";
+import { IPSeudoItem } from "./interfaces/IPseudoItem";
+import Hole from "./Hole";
+import BaseObject from "./BaseObject";
 
-export interface IWormPiece extends Omit<IItem, "target" | "group" | "width" | "height"> {
+export default class WormPiece extends BaseObject {
+    constructor({ index, spin, ...data }: IPSeudoItem) {
+        super({ 
+            ...data, 
+            paintPriority: 7, 
+            width: CONFIG.SIZE, 
+            height: CONFIG.SIZE,  
+            frame: { index, textureId: "worm", columns: 2, frameSize: 55, spin },
+            group: [WormPiece], 
+            target: [Stone, Block, Apple, Hole] 
+        })
+    }
 
-}
-
-export default class WormPiece extends Square {
-    constructor(data: IWormPiece) {
-        super({ ...data, paintPriority: 9, width: CONFIG.SIZE, height: CONFIG.SIZE, textureId: "worm", group: [WormPiece], target: [Stone, Block, Apple] })
+    public update(): void {
+        
     }
 
     public copy(): WormPiece {
-        return new WormPiece({ x: this.getX(), y: this.getY() }).setGroup([WormPiece]).setTarget([Stone, Block, Apple])
+        return new WormPiece({ 
+            x: this.getX(), 
+            y: this.getY(),
+            index: this.getFrameProperty("index"),
+            spin: this.getFrameProperty("spin")
+        })
     }
 }

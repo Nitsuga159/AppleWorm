@@ -4,20 +4,27 @@ import { IItem } from "../motor/Items/IItem";
 import Loop from "../motor/Loop";
 import Square from "../motor/Shape/Square";
 import Apple from "./Apple";
+import BaseObject from "./BaseObject";
 import Block from "./Block";
+import Hole from "./Hole";
 import WormPiece from "./WormPiece";
 import CONFIG from "./constants";
 import game from "./game";
+import { IPSeudoItem } from "./interfaces/IPseudoItem";
 
-export interface IStone extends Omit<IItem, "group" | "target" | "width" | "height"> {
-    
-}
-
-export default class Stone extends Square {
+export default class Stone extends BaseObject {
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
 
-    constructor(data: IStone) {
-        super({ ...data, paintPriority: 8, textureId: "stone", width: CONFIG.SIZE, height: CONFIG.SIZE, group: [Stone], target: [WormPiece, Block, Apple] })
+    constructor({ index, spin, ...data }: IPSeudoItem) {
+        super({ 
+            ...data, 
+            paintPriority: 8, 
+            width: CONFIG.SIZE, 
+            height: CONFIG.SIZE, 
+            frame: { index, textureId: "stone", columns: 1, frameSize: 55, spin },
+            group: [Stone], 
+            target: [WormPiece, Block, Apple, Stone, Hole] 
+        })
 
         this.addFunctionality(this.gravity)
 
@@ -29,14 +36,13 @@ export default class Stone extends Square {
     }
 
     public update(): void {
-        this.getTransitionX()?.update()
-        this.getTransitionY()?.update()
+        super.update()
 
         game.forEachItemConstructor(
-            this.getTarget(), ({ item, stop }) => {
-                if(this.itemCollision(this, item) === DIRECTION.TOP) {
+            this.getTarget(), item => {
+                if(item !== this && this.itemCollision(this, item) === DIRECTION.TOP) {
                     this.setY(Math.floor(this.getY() / CONFIG.SIZE) * CONFIG.SIZE)
-                    stop()
+                    return true
                 }
             }
         )
