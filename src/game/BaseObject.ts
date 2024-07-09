@@ -3,9 +3,13 @@ import { ILocation } from "../motor/Items/IBaseItem";
 import Transition from "../motor/Items/Transition";
 import Square from "../motor/Shape/Square";
 
-export default abstract class BaseObject extends Square {
+export default class BaseObject extends Square {
     private transitionX: Transition | null = null
     private transitionY: Transition | null = null
+
+    public copy() {
+        return new BaseObject({ x: this.getX(), y: this.getY(), width: this.getWidth(), height: this.getHeight(), frame: { index: this.getFrameProperty("index"), frameSize: 50, textureId: this.getFrameProperty("textureId") } })
+    }
 
     public isMoving() {
         return this.transitionX !== null || this.transitionY !== null
@@ -100,6 +104,8 @@ export default abstract class BaseObject extends Square {
     }
 
     public async setChainTransition(locations: ILocation[]) {
+        this.setFrameProperty("syncLocation", false)
+
         for(let { x, y } of locations) {
             await new Promise(resolve => {
                 let transitionX = false
@@ -108,11 +114,11 @@ export default abstract class BaseObject extends Square {
                 this.setTransitionFrameX(x, () => {
                     transitionX = true
                     transitionY && resolve(1)
-                }, 20);
+                },15);
                 this.setTransitionFrameY(y, () => {
                     transitionY = true
                     transitionX && resolve(1)
-                }, 20);
+                }, 15);
             })
         }
     }

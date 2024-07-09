@@ -1,4 +1,5 @@
 import Apple from "./game/Apple";
+import BaseObject from "./game/BaseObject";
 import Block from "./game/Block";
 import Cloud from "./game/Cloud";
 import Hole from "./game/Hole";
@@ -148,9 +149,11 @@ document.addEventListener("keydown", (e) => {
     const isHole = game.getFrom([headCube.getX() + newX, headCube.getY() + newY])
 
     if (isHole instanceof Hole) {
-        const reverseWorm = game.getWorm()!.getPieces().slice().reverse()
+        const reverseWorm: BaseObject[] = game.getWorm()!.getPieces().slice().reverse()
+        const holeCopy = isHole.copy()
+        reverseWorm.push(isHole, holeCopy.setX(holeCopy.getX() + (newX ? newX + 10 : 0)).setY(holeCopy.getY() + (newY ? newY + 10 : 0)))
 
-        reverseWorm.map((_, i) => reverseWorm.slice(i + 1).map(n => ({ x: n.getFrameProperty("frameX")!, y: n.getFrameProperty("frameY")! })))
+        reverseWorm.map((_, i) => reverseWorm.slice(i + 1).map(n => ({ x: n.getX(), y: n.getY() })))
             .forEach(
                 (p, i) => reverseWorm[i].setChainTransition(p)
             )
@@ -169,7 +172,6 @@ document.addEventListener("keydown", (e) => {
     }
 
     worm.getQueue().forEach((s, index) => {
-        console.log(index)
         let aux = s.getLocation()
         s.setTransitionX(prev[0], () => index === worm.getQueue().length - 1 && worm.setFalling(true))
         s.setTransitionY(prev[1], () => index === worm.getQueue().length - 1 && worm.setFalling(true))

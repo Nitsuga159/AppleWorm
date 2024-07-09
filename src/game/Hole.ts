@@ -25,23 +25,4 @@ export default class Hole extends BaseObject {
             (this.getFrameProperty("spin")! + 10) % 360
         )
     }
-
-    public static won(newX: number, newY: number) {
-        if(!game.getWorm()) return;
-        const headCube = game.getWorm()!.getHead()
-        const worm = game.getWorm()!
-        const isHole = game.getFrom([headCube.getX() + newX, headCube.getY() + newY])
-
-        if (isHole instanceof Hole) {
-            worm.setFalling(false)
-            worm.getPieces().forEach(p => p.setTarget(p.getTarget().filter(p => p !== Hole)))
-
-            const reverseWorm = game.getWorm()!.getPieces().slice().reverse()
-
-            reverseWorm.map((_, i) => reverseWorm.slice(i + 1).map(n => ({ x: n.getX(), y: n.getY() })))
-                .forEach(
-                    (p, i) => reverseWorm[i].setChainTransition(p)
-                )
-        }
-    }
 }
