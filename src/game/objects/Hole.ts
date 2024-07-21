@@ -1,8 +1,8 @@
-import Square from "../motor/Shape/Square";
+import Square from "../../motor/Shape/Square";
 import BaseObject from "./BaseObject";
-import CONFIG from "./constants";
-import game from "./game";
-import { IPSeudoItem } from "./interfaces/IPseudoItem";
+import CONFIG from "../constants";
+import game from "../game";
+import { IPSeudoItem } from "../interfaces/IPseudoItem";
 
 export default class Hole extends BaseObject {
 
@@ -22,7 +22,7 @@ export default class Hole extends BaseObject {
     public update(): void {
         this.setFrameProperty(
             "spin",
-            (this.getFrameProperty("spin")! + 10) % 360
+            (this.getFrameProperty("spin")! - 10) % -360
         )
     }
 }

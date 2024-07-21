@@ -25,7 +25,7 @@ export default class MouseMove {
         let prevX: number = 0
         let prevY: number = 0
 
-        this.onMouseMove = ({ pageX: x, pageY: y }: MouseEvent) => {
+        this.onMouseMove = ({ clientX: x, clientY: y }: MouseEvent) => {
             if(prevX && prevY && (!encapsulate || this.mousePress.isPressed())  && (!canMove || canMove())) {
                 target.addX(x - prevX).addY(y - prevY)
             }

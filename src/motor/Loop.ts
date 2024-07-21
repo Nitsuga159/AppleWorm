@@ -31,7 +31,6 @@ export default class Loop extends Container {
             this.get()
             .filter(f => f.shouldPaint())
             .slice()
-            .sort((a, b) => a.getPaintPriority() < b.getPaintPriority() ? -1 : 1)
             .forEach(item => {
                 ctx.save()
                 item.paint(ctx)

@@ -1,12 +1,12 @@
-import Apple from "./game/Apple";
-import BaseObject from "./game/BaseObject";
-import Block from "./game/Block";
-import Cloud from "./game/Cloud";
-import Hole from "./game/Hole";
+import Apple from "./game/objects/Apple";
+import BaseObject from "./game/objects/BaseObject";
+import Block from "./game/objects/Block";
+import Cloud from "./game/objects/Cloud";
+import Hole from "./game/objects/Hole";
 import Menu from "./game/Menu";
-import Skewers from "./game/Skewers";
-import Stone from "./game/Stone";
-import WormPiece from "./game/WormPiece";
+import Skewers from "./game/objects/Skewers";
+import Stone from "./game/objects/Stone";
+import WormPiece from "./game/objects/WormPiece";
 import CONFIG from "./game/constants";
 import game, { MODE, WormGame } from "./game/game";
 import GAME_OBJETS from "./game/gameObjects";
@@ -14,76 +14,10 @@ import Canvas from "./motor/Canvas";
 import EventController from "./motor/EventController";
 import MouseMove from "./motor/Functions/MouseMove/MouseMove";
 import BaseItem from "./motor/Items/BaseItem";
-import Transition from "./motor/Items/Transition";
-import Square from "./motor/Shape/Square";
 
 game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Cloud)
 
-
-Canvas.init({ id: "root", width: window.innerWidth, height: window.innerHeight })
-
-/*
-game.loadJSON({
-    "name": "xd",
-    "items": {
-        "apple": [],
-        "block": [
-            {
-                "x": 400,
-                "y": 300,
-                "index": 6
-            },
-            {
-                "x": 500,
-                "y": 300,
-                "index": 7
-            },
-            {
-                "x": 400,
-                "y": 200,
-                "index": 14
-            },
-            {
-                "x": 450,
-                "y": 200,
-                "index": 15
-            },
-            {
-                "x": 500,
-                "y": 200,
-                "index": 16
-            },
-            {
-                "x": 400,
-                "y": 250,
-                "index": 18
-            },
-            {
-                "x": 500,
-                "y": 250,
-                "index": 18
-            },
-            {
-                "x": 450,
-                "y": 300,
-                "index": 15
-            }
-        ],
-        "worm": [],
-        "stone": [],
-        "skewers": [
-            {
-                "x": 450,
-                "y": 250,
-                "index": 1
-            }
-        ],
-        "hole": []
-    }
-}, GAME_OBJETS)
-*/
-
-//game.add(new Cloud({ index: 1, x: 100, y: 100 }))
+Canvas.init({ id: "root", width: 1200, height: 720 })
 
 const map: { [key: string]: number } = {
     "ArrowLeft": -50,
@@ -151,12 +85,29 @@ document.addEventListener("keydown", (e) => {
     if (isHole instanceof Hole) {
         const reverseWorm: BaseObject[] = game.getWorm()!.getPieces().slice().reverse()
         const holeCopy = isHole.copy()
-        reverseWorm.push(isHole, holeCopy.setX(holeCopy.getX() + (newX ? newX + 10 : 0)).setY(holeCopy.getY() + (newY ? newY + 10 : 0)))
+        const holeCopy2 = isHole.copy()
+        reverseWorm.push(
+            isHole, 
+            holeCopy.setX(holeCopy.getX() + newX).setY(holeCopy.getY() + newY),
+            holeCopy2.setX(holeCopy2.getX() + (newX * 2)).setY(holeCopy2.getY() + (newY * 2)),
+        )
+
+        game.setWonPiece(reverseWorm)
 
         reverseWorm.map((_, i) => reverseWorm.slice(i + 1).map(n => ({ x: n.getX(), y: n.getY() })))
             .forEach(
-                (p, i) => reverseWorm[i].setChainTransition(p)
+                (p, i) => reverseWorm[i].setChainTransition(p, () => {
+                    worm.checkQueueFrame()
+                    worm.checkEndFrame()
+                })
             )
+
+            worm.checkHeadFrame(
+                [worm.getHead().getFrameProperty("frameX")!, worm.getHead().getFrameProperty("frameY")!],
+                [worm.getHead().getNextX(), worm.getHead().getNextY()]
+            )
+            worm.checkQueueFrame()
+            worm.checkEndFrame()
 
         return;
     }
@@ -165,11 +116,14 @@ document.addEventListener("keydown", (e) => {
 
     if (newX) {
         headCube.setTransitionX(headX + plus, () => appleItem && game.remove(appleItem))
-        headCube.setFrameProperty("spin", newX < 0 ? -180 : 0)
     } else {
         headCube.setTransitionY(headY + plus, () => appleItem && game.remove(appleItem))
-        headCube.setFrameProperty("spin", newY < 0 ? -90 : 90)
     }
+
+    worm.checkHeadFrame(
+        headCube.getLocation(),
+        [headCube.getNextX(), headCube.getNextY()]
+    )
 
     worm.getQueue().forEach((s, index) => {
         let aux = s.getLocation()
@@ -177,6 +131,10 @@ document.addEventListener("keydown", (e) => {
         s.setTransitionY(prev[1], () => index === worm.getQueue().length - 1 && worm.setFalling(true))
         prev = aux
     })
+
+    worm.checkQueueFrame()
+
+    worm.checkEndFrame()
 })
 
 const menu = new Menu()
@@ -184,11 +142,12 @@ const menu = new Menu()
 game.execute(() => {
     Skewers.checkCollision(game.getWorm()!)
     game.getWorm()?.checkCollision()
+    game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
 })
 
 game.setMode(MODE.EDITOR)
 
-EventController.addListener("mousedown", ({ pageX: x, pageY: y }) => {
+EventController.addListener("mousedown", ({ clientX: x, clientY: y }) => {
     if (game.getMode() !== MODE.EDITOR) return;
     const gameItemSelected = game.getFrom(WormGame.floorCoords([x, y]))
 
@@ -231,16 +190,6 @@ EventController.addListener("mousedown", ({ pageX: x, pageY: y }) => {
     game.add(item)
 })
 
-window.addEventListener("resize", () => {
-    const canvas = Canvas.getCanvas()
-
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-})
-
-
-
-
 //BUTTONS EXPORT - IMPORT
 
 const exportButton = document.getElementById("export-button")
@@ -263,8 +212,9 @@ exportButton?.addEventListener("click", () => {
 importButton?.addEventListener("click", () => importFile?.click())
 
 importFile?.addEventListener("change", async () => {
-    console.log("hola", await importFile.files![0].text())
-    game.loadJSON(JSON.parse(await importFile.files![0].text()), GAME_OBJETS)
+    if(importFile.files?.length) {
+        game.loadJSON(JSON.parse(await importFile.files![0].text()), GAME_OBJETS)
+    }
 })
 
 

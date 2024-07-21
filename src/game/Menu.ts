@@ -17,16 +17,16 @@ export default class Menu {
         this.menuItems = document.getElementById("menu-items") as HTMLDivElement
         this.menuButton = document.getElementById("menu-button") as HTMLDivElement
 
-        document.addEventListener("mousemove", ({ pageX, pageY }) => {
+        document.addEventListener("mousemove", ({ clientX, clientY }) => {
             
             const { top, left } = this.menu.getBoundingClientRect()
-            if(this.mousePress && pageX && pageY) {
-                this.menu.style.top = `${top  + (pageY - this.prevY)}px`
-                this.menu.style.left = `${left + (pageX - this.prevX)}px`
+            if(this.mousePress && clientX && clientY) {
+                this.menu.style.top = `${top  + (clientY - this.prevY)}px`
+                this.menu.style.left = `${left + (clientX - this.prevX)}px`
             }
 
-            this.prevX = pageX
-            this.prevY = pageY
+            this.prevX = clientX
+            this.prevY = clientY
         })
 
         document.addEventListener("mousedown", (e) => {

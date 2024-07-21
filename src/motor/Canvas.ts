@@ -13,6 +13,8 @@ export default class Canvas {
         Canvas.canvas.height = height
 
         Canvas.ctx = Canvas.canvas.getContext("2d")!
+
+        Canvas.ctx.imageSmoothingEnabled = false; // Desactivar antialiasing
     }
 
     public static getSize(): [number, number] {

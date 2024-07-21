@@ -1,8 +1,8 @@
-import { IItem } from "../motor/Items/IItem";
-import Square from "../motor/Shape/Square";
-import Worm from "./Worm";
-import CONFIG from "./constants";
-import { IPSeudoItem } from "./interfaces/IPseudoItem";
+import { IItem } from "../../motor/Items/IItem";
+import Square from "../../motor/Shape/Square";
+import Worm from "../Worm";
+import CONFIG from "../constants";
+import { IPSeudoItem } from "../interfaces/IPseudoItem";
 
 export default class Cloud extends Square {
     constructor({ index, ...data}: IPSeudoItem) {

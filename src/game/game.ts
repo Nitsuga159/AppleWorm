@@ -3,14 +3,15 @@ import GameMap from "../motor/GameMap";
 import BaseItem from "../motor/Items/BaseItem";
 import Item from "../motor/Items/Item";
 import Loop from "../motor/Loop";
+import BaseObject from "./objects/BaseObject";
 import Worm from "./Worm";
-import WormPiece from "./WormPiece";
+import WormPiece from "./objects/WormPiece";
 import CONFIG from "./constants";
 import { IPSeudoItem } from "./interfaces/IPseudoItem";
 
 export interface JSONCoords {
     name: string,
-    items: { [key: string]: {x: number, y: number, index: number, spin?: number }[] }
+    items: { [key: string]: {x: number, y: number, index: number, spin?: number, flip?: boolean }[] }
 }
 
 export enum MODE {
@@ -24,6 +25,15 @@ export class WormGame extends GameMap {
     private worm?: Worm
     private json?: JSONCoords
     private stop: boolean = false
+    private wonPiece: BaseObject[] | null = null
+
+    public setWonPiece(piece: BaseObject[]) {
+        this.wonPiece = piece
+    }
+
+    public getWonPiece(){
+        return this.wonPiece
+    }
 
     public getLoadedJSON() {
         return this.json
@@ -65,9 +75,8 @@ export class WormGame extends GameMap {
                 continue;
             }
 
-            for(let { x, y, index, spin } of json.items[itemKey]) {
-                console.log(spin, index)
-                const item = new gameObjects[itemKey]({ x, y, index, spin })
+            for(let { x, y, index, spin, flip } of json.items[itemKey]) {
+                const item = new gameObjects[itemKey]({ x, y, index, spin, flip })
 
                 if(this.mode === MODE.EDITOR) {
                     const instance = new MouseMove({ target: item, encapsulate: true, onNewLocation: (n) => {
@@ -99,6 +108,10 @@ export class WormGame extends GameMap {
 
             if(i.getFrameProperty("spin")) {
                 item.spin = i.getFrameProperty("spin")
+            }
+
+            if(i.getFrameProperty("flip")) {
+                item.flip = i.getFrameProperty("flip")
             }
 
             return item
