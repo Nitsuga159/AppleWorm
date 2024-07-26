@@ -5,8 +5,10 @@ import Square from "../../motor/Shape/Square";
 import BaseObject from "./BaseObject";
 import Worm from "../Worm";
 import CONFIG from "../constants";
-import game from "../game";
+import game, { WormGame } from "../game";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
+import WormPiece from "./WormPiece";
+import GameMap from "../../motor/GameMap";
 
 export default class Skewers extends BaseObject {
     constructor({ index, spin, ...data }: IPSeudoItem) {
@@ -47,13 +49,9 @@ export default class Skewers extends BaseObject {
         }
     }
 
-    public static checkCollision(worm?: Worm) {
-        Skewers.getAllItems().forEach((skewers) => {
-            skewers = skewers as Skewers
-            if (worm?.getPieces()?.some(piece => BaseItem.matchLocation(skewers.getLocation(), piece.getLocation()))) {
+    public onCollide(headCube: WormPiece, game: GameMap) {
+        (game as WormGame).setStop(true)
 
-                game.setStop(true)
-            }
-        })
+        return true
     }
 }

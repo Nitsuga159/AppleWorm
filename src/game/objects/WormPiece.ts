@@ -1,6 +1,4 @@
 import game from "../game";
-import { IItem } from "../../motor/Items/IItem";
-import Square from "../../motor/Shape/Square";
 import Apple from "./Apple";
 import Block from "./Block";
 import Stone from "./Stone";
@@ -8,7 +6,7 @@ import CONFIG from "../constants";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
 import Hole from "./Hole";
 import BaseObject from "./BaseObject";
-import Canvas from "../../motor/Canvas";
+import GameMap from "../../motor/GameMap";
 
 export default class WormPiece extends BaseObject {
     constructor({ index, spin, ...data }: IPSeudoItem) {
@@ -85,5 +83,9 @@ export default class WormPiece extends BaseObject {
         }
 
         super.paint(ctx)
+    }
+
+    public onCollide(_: WormPiece, __: GameMap): boolean {
+        return false
     }
 }

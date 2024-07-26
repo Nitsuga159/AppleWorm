@@ -15,7 +15,9 @@ export default class EventController {
                     if(typeof ev.clientX !== "undefined" && typeof ev.clientY !== "undefined") {
                         const [clientX, clientY] = normilizeCoors(ev.clientX, ev.clientY)
 
-                        this.eventsController.get(event)?.forEach(l => l({ clientX, clientY } as any))
+                        this.eventsController.get(event)?.forEach(l => {
+                            l({ clientX, clientY } as any)
+                        })
                     }
             });
         }

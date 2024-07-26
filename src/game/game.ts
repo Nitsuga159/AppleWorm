@@ -102,6 +102,10 @@ export class WormGame extends GameMap {
         return this.worm
     }
 
+    public setWorm(worm: Worm) {
+        this.worm = worm
+    }
+
     getItemJSON(itemConstructor: typeof Item) {
         return itemConstructor.getAllItems().map(i => {
             const item = { x: i.getX(), y: i.getY(), index: i.getFrameProperty("index") } as any

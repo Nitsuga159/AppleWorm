@@ -1,10 +1,11 @@
-import Gravity from "../../motor/Functions/Gravity/Gravity";
+import GameMap from "../../motor/GameMap";
 import { ILocation } from "../../motor/Items/IBaseItem";
 import { IItem } from "../../motor/Items/IItem";
 import Transition from "../../motor/Items/Transition";
 import Square from "../../motor/Shape/Square";
+import WormPiece from "./WormPiece";
 
-export default class BaseObject extends Square {
+export default abstract class BaseObject extends Square {
     private nextX: number = 0
     private nextY: number = 0
     private transitionX: Transition | null = null
@@ -19,7 +20,7 @@ export default class BaseObject extends Square {
     }
 
     public copy() {
-        return new BaseObject({ x: this.getX(), y: this.getY(), width: this.getWidth(), height: this.getHeight(), frame: { index: this.getFrameProperty("index"), frameSize: this.getFrameProperty("frameSize"), textureId: this.getFrameProperty("textureId") } })
+        return new (this.constructor as any)({ x: this.getX(), y: this.getY(), width: this.getWidth(), height: this.getHeight(), frame: { index: this.getFrameProperty("index"), frameSize: this.getFrameProperty("frameSize"), textureId: this.getFrameProperty("textureId") } })
     }
 
     public isMoving() {
@@ -59,83 +60,68 @@ export default class BaseObject extends Square {
         return [this.nextX, this.nextY]
     }
 
-    public setTransitionFrameY(newY: number, cb?: () => void, frames: number = 10) {
-        this.nextY = newY
-        this.transitionY =
+    public setTransition({ next, dir, cb, onlyFrame, frames = 10 }: { next: number, dir: "X" | "Y", onlyFrame: boolean, cb?: () => void, frames?: number }) {
+        const getterDirLocation = onlyFrame ? () => this.getFrameProperty(`frame${dir}`)! : () => this[`get${dir}`]()
+        const setterDirLocation = onlyFrame ? (v: number) => this.setFrameProperty(`frame${dir}`, getterDirLocation() + v) : (v: number) => this[`set${dir}`](v)
+
+        this[`next${dir}`] = next
+        this[`transition${dir}`] =
         new Transition({
             frames,
-            from: this.getFrameProperty("frameY")!,
-                to: newY,
-                cb: (v) => this.setFrameProperty(
-                    "frameY",
-                    this.getFrameProperty("frameY")! + v
-                ),
+            from: getterDirLocation(),
+            to: next,
+                cb: setterDirLocation,
                 onEnd: () => {
-                    this.transitionY = null
-                    cb && cb()
-                }
-            })
-    }
-    
-    public setTransitionFrameX(newX: number, cb?: () => void, frames: number = 10) {
-        this.nextX = newX
-        this.transitionX =
-            new Transition({
-                frames,
-                from: this.getFrameProperty("frameX")!,
-                to: newX,
-                cb: (v) => this.setFrameProperty(
-                    "frameX",
-                    this.getFrameProperty("frameX")! + v
-                ),
-                onEnd: () => {
-                    this.transitionX = null
-                    cb && cb()
-                }
-            })
-    }
-    
-    public setTransitionX(newX: number, cb?: () => void, frames: number = 10) {
-        this.setFrameProperty("syncLocation", false)
-        this.nextX = newX
-        this.transitionX =
-        new Transition({
-            frames,
-            from: this.getX(),
-            to: newX,
-                cb: (v) => this.setFrameProperty(
-                    "frameX",
-                    this.getFrameProperty("frameX")! + v
-                ),
-                onEnd: () => {
-                    this.setFrameProperty("syncLocation", true)
-                    this.setX(newX)
-                    this.transitionX = null
+                    this[`transition${dir}`] = null
                     cb && cb()
                 }
             })
     }
 
-    public setTransitionY(newY: number, cb?: () => void, frames: number = 10) {
+    public setTransitionFrameY(newY: number, cb?: () => void) {
+        this.setTransition({
+            next: newY,
+            dir: "Y",
+            cb,
+            onlyFrame: true
+        })
+    }
+    
+    public setTransitionFrameX(newX: number, cb?: () => void) {
+        this.setTransition({
+            next: newX,
+            dir: "X",
+            cb,
+            onlyFrame: true
+        })
+    }
+    
+    public setTransitionY(newY: number, cb?: () => void) {
         this.setFrameProperty("syncLocation", false)
-        this.nextY = newY
-        this.transitionY =
-            new Transition({
-                frames,
-                from: this.getY(),
-                to: newY,
-                cb: (v) => this.setFrameProperty(
-                    "frameY",
-                    this.getFrameProperty("frameY")! + v
-                ),
-                onEnd: () => {
-                    this.setFrameProperty("syncLocation", true)
-                    this.setY(newY)
-                    this.transitionY = null
-                    cb && cb()
-                }
-            })
-
+        this.setTransition({
+                next: newY,
+                dir: "Y",
+                onlyFrame: true,
+            cb: () => {
+                this.setFrameProperty("syncLocation", true)
+                this.setY(newY)
+                cb && cb()
+            }
+        })
+    }
+    
+    public setTransitionX(newX: number, cb?: () => void) {
+        this.setFrameProperty("syncLocation", false)
+        this.setTransition({
+                next: newX,
+                dir: "X",
+                onlyFrame: true,
+            cb: () => {
+                this.setFrameProperty("syncLocation", true)
+                this.setX(newX)
+                cb && cb()
+            }
+        })
     }
 
     public async setChainTransition(locations: ILocation[], onFinish?: () => void) {
@@ -154,14 +140,16 @@ export default class BaseObject extends Square {
                 this.setTransitionFrameX(x, () => {
                     transitionX = true
                     transitionY && resolve(1)
-                }, 10);
+                });
                 this.setTransitionFrameY(y, () => {
                     transitionY = true
                     transitionX && resolve(1)
-                }, 10);
+                });
             })
 
             if(onFinish) onFinish()
         }
     }
+
+    public abstract onCollide(headCube: WormPiece, game: GameMap): boolean
 }

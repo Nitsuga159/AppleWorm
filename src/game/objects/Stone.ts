@@ -9,8 +9,10 @@ import Block from "./Block";
 import Hole from "./Hole";
 import WormPiece from "./WormPiece";
 import CONFIG from "../constants";
-import game from "../game";
+import game, { WormGame } from "../game";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
+import GameMap from "../../motor/GameMap";
+import Skewers from "./Skewers";
 
 export default class Stone extends BaseObject {
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
@@ -46,5 +48,23 @@ export default class Stone extends BaseObject {
                 }
             }
         )
+    }
+
+    public onCollide(headCube: WormPiece, game: GameMap): boolean {
+        const gameWorm = game as WormGame
+        const addX = WormGame.floorCoord(this.getX() - headCube.getX())
+        const addY = WormGame.floorCoord(this.getY() - headCube.getY())
+
+        const item = gameWorm.getFrom([this.getX() + addX, this.getY() + addY])
+        if(item !== null && !(item instanceof Skewers)) return false;
+
+        this.getGravity().setIsEnabled(false);
+        if(addX) {
+            this.setTransitionX(this.getX() + addX, () => this.getGravity().setIsEnabled(true));
+        } else {
+            this.setTransitionY(this.getY() + addY, () => this.getGravity().setIsEnabled(true)); 
+        }
+
+        return true
     }
 }

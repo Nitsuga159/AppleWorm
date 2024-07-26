@@ -5,7 +5,7 @@ module.exports = {
   entry: './dist/index.js',
   output: {
     filename: 'bundle.min.js',
-    path: path.resolve(__dirname, ''),
+    path: path.resolve(__dirname, 'public/'),
   },
   optimization: {
     minimize: true,

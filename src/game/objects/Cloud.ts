@@ -8,10 +8,10 @@ export default class Cloud extends Square {
     constructor({ index, ...data}: IPSeudoItem) {
         super({ 
             ...data, 
-            width: CONFIG.SIZE, 
-            height: CONFIG.SIZE, 
+            width: 300, 
+            height: 300, 
             paintPriority: -1,
-            frame: { index, textureId: "cloud",  columns: 1, frameSize: 100 },
+            frame: { index, textureId: "cloud",  columns: 1, frameSize: 300 },
         })
 
         this.fill = "red"

@@ -76,58 +76,6 @@ export default class Worm {
         return this.pieces.at(-1)
     }
 
-    private canMove(plus: number, dir: "X" | "Y") {
-        const headLocation = this.getHead().getLocation()
-        const index = dir === "X" ? 0 : 1
-        headLocation[index] += plus
-
-        let canMove = true
-
-        game.forEachItemConstructor(this.getHead().getTarget(), item => {
-            if (item instanceof Block && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                canMove = false
-                return true
-            }
-
-            if (item instanceof Stone && BaseItem.matchLocation(headLocation, item.getLocation())) {
-                const nextToStone = headLocation
-                nextToStone[index] += plus
-
-                let found = false
-                game.forEachItemConstructor(item.getTarget(), (currentItem) => {
-                    if (item !== currentItem && BaseItem.matchLocation(nextToStone, currentItem.getLocation())) {
-                        found = true
-                        return true
-                    }
-                });
-
-                if (found) {
-                    canMove = false
-                    return true
-                }
-
-                (item as Stone).getGravity().setIsEnabled(false);
-                (item as Stone)[`setTransition${dir}`](item[`get${dir}`]() + plus, () => (item as Stone).getGravity().setIsEnabled(true));
-                return true
-            }
-        })
-
-        let headX = this.getHead().getX()
-        if(dir === "Y" && plus < 0 && this.getPieces().every(p => p.getX() === headX)) {
-            return false
-        }
-
-        return canMove
-    }
-
-    public canMoveX(newX: number): boolean {
-        return this.canMove(newX, "X")
-    }
-
-    public canMoveY(newY: number): boolean {
-        return this.canMove(newY, "Y")
-    }
-
     public isMoving() {
         return this.pieces.some(p => p.isMoving())
     }

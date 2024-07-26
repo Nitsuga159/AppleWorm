@@ -3,6 +3,8 @@ import Square from "../../motor/Shape/Square";
 import BaseObject from "./BaseObject";
 import CONFIG from "../constants";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
+import GameMap from "../../motor/GameMap";
+import WormPiece from "./WormPiece";
 
 export default class Block extends BaseObject {
     constructor({ index, spin, ...data }: IPSeudoItem) {
@@ -16,5 +18,9 @@ export default class Block extends BaseObject {
         })
 
         this.fill = "#420"
+    }
+
+    public onCollide(_: WormPiece, __: GameMap): boolean {
+        return false
     }
 }

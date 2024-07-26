@@ -69,14 +69,8 @@ export default class Menu {
                     for (let i = 1; i <= amount; i++) {
                         const { x, y } = this.getFrameCoordinates(i, columns, size)
 
-
-                        // Dibujar la porción recortada de la imagen en el canvas
                         ctx.drawImage(imgRender, x, y, size, size, 0, 0, size, size);
-
-                        // Convertir el contenido del canvas a una URL de datos
                         var croppedImageUrl = menu.toDataURL('image/png');
-
-                        // Asignar la URL de datos a la etiqueta <img> para mostrar la imagen recortada
                         var croppedImage = document.createElement("img");
                         croppedImage.src = croppedImageUrl;
                         croppedImage.draggable = false
