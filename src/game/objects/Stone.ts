@@ -16,6 +16,7 @@ import Skewers from "./Skewers";
 
 export default class Stone extends BaseObject {
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
+    private falling = false
 
     constructor({ index, spin, ...data }: IPSeudoItem) {
         super({ 
@@ -31,6 +32,7 @@ export default class Stone extends BaseObject {
         this.addFunctionality(this.gravity)
 
         this.fill = "gray"
+        this.falling = false
     }
 
     public getGravity() {
@@ -40,10 +42,12 @@ export default class Stone extends BaseObject {
     public update(): void {
         super.update()
 
+        this.falling = true
         game.forEachItemConstructor(
             this.getTarget(), item => {
                 if(item !== this && this.itemCollision(this, item) === DIRECTION.TOP) {
                     this.setY(Math.floor(this.getY() / CONFIG.SIZE) * CONFIG.SIZE)
+                    this.falling = false
                     return true
                 }
             }
@@ -51,6 +55,8 @@ export default class Stone extends BaseObject {
     }
 
     public onCollide(headCube: WormPiece, game: GameMap): boolean {
+        if(this.falling) return false;
+        
         const gameWorm = game as WormGame
         const addX = WormGame.floorCoord(this.getX() - headCube.getX())
         const addY = WormGame.floorCoord(this.getY() - headCube.getY())
@@ -59,11 +65,14 @@ export default class Stone extends BaseObject {
         if(item !== null && !(item instanceof Skewers)) return false;
 
         this.getGravity().setIsEnabled(false);
+        this.setFrameProperty("syncLocation", true)
         if(addX) {
-            this.setTransitionX(this.getX() + addX, () => this.getGravity().setIsEnabled(true));
+            this.setTransitionX(this.getX() + addX, false, () => this.getGravity().setIsEnabled(true));
         } else {
-            this.setTransitionY(this.getY() + addY, () => this.getGravity().setIsEnabled(true)); 
+            this.setTransitionY(this.getY() + addY, false, () => this.getGravity().setIsEnabled(true)); 
         }
+
+        this.falling = true
 
         return true
     }

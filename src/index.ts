@@ -14,8 +14,9 @@ import Canvas from "./motor/Canvas";
 import EventController from "./motor/EventController";
 import MouseMove from "./motor/Functions/MouseMove/MouseMove";
 import Worm from "./game/Worm";
+import Start from "./game/objects/Start";
 
-game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Cloud)
+game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
 
 Canvas.init({ id: "root", width: 1300, height: 820 })
 
@@ -40,29 +41,44 @@ document.addEventListener("keydown", (e) => {
     const headCube = worm.getHead()
     const [headX, headY] = headCube.getLocation()
 
+    if (addY < 0 && worm.isVertical()) return;
+
     const item = game.getFrom([headX + addX, headY + addY]) as BaseObject
 
-    if(item) {
+    if (item instanceof BaseObject) {
         const canPass = item.onCollide(headCube, game)
 
-        if(!canPass) return;
-    } else if(addY < 0 && worm.getPieces().every(p => p.getX() === headX)) {
-        return;
+        if (!canPass) return;
     }
 
     if (!(item instanceof Hole)) {
         let prev: number[] = [headX, headY]
 
+        headCube.setFrameProperty("syncLocation", false)
+
         if (addX) {
-            headCube.setTransitionX(headX + plus, () => item instanceof Apple && game.remove(item))
+            headCube.setTransitionX(headX + plus, true, () => {
+                if (item instanceof Apple) game.remove(item)
+                headCube.setFrameProperty("syncLocation", true)
+            })
         } else {
-            headCube.setTransitionY(headY + plus, () => item instanceof Apple && game.remove(item))
+            headCube.setTransitionY(headY + plus, true, () => {
+                if (item instanceof Apple) game.remove(item)
+                headCube.setFrameProperty("syncLocation", true)
+            })
         }
 
         worm.getQueue().forEach((s, index) => {
+            s.setFrameProperty("syncLocation", false)
             let aux = s.getLocation()
-            s.setTransitionX(prev[0], () => index === worm.getQueue().length - 1 && worm.setFalling(true))
-            s.setTransitionY(prev[1], () => index === worm.getQueue().length - 1 && worm.setFalling(true))
+            s.setTransitionX(prev[0], true, () => {
+                index === worm.getQueue().length - 1 && !(item instanceof Skewers) && worm.setFalling(true)
+                s.setFrameProperty("syncLocation", true)
+            })
+            s.setTransitionY(prev[1], true, () => {
+                index === worm.getQueue().length - 1 && !(item instanceof Skewers) && worm.setFalling(true)
+                s.setFrameProperty("syncLocation", true)
+            })
             prev = aux
         })
         worm.checkHeadFrame(
@@ -77,8 +93,11 @@ document.addEventListener("keydown", (e) => {
 
 const menu = new Menu()
 
+game.add(new Start())
+
 game.execute(() => {
     game.getWorm()?.checkCollision()
+    Skewers.checkCollision()
     game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
 })
 

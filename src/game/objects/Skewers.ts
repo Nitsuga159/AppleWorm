@@ -49,8 +49,23 @@ export default class Skewers extends BaseObject {
         }
     }
 
+    public static checkCollision() {
+        for(let piece of game.getWorm()?.getQueue() || []) {
+            for(let skewer of Skewers.getAllItems()) {
+                if(BaseItem.matchLocation(WormGame.floorCoords(piece.getLocation()), WormGame.floorCoords(skewer.getLocation()))) {
+                    game.setStop(true)
+                    game.getWorm()!.getHead().setFrameProperty("index", 5)
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
     public onCollide(headCube: WormPiece, game: GameMap) {
-        (game as WormGame).setStop(true)
+        (game as WormGame).setStop(true).getWorm()!.setFalling(false)
+        headCube.setFrameProperty("index", 5)
 
         return true
     }

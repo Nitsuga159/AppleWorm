@@ -96,6 +96,14 @@ export default class Worm {
         }
     }
 
+    /**
+     * Check if all worm pieces are in the same X axe (vertical worm)
+     * @returns boolean
+     */
+    public isVertical() {
+        return this.getQueue().every(p => p.getX() === this.getHead().getX())
+    }
+
     public checkQueueFrame() {
         const pieces = this.getPieces().slice()
         for (let i = 1; i < pieces.length - 1; i++) {

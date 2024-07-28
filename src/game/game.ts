@@ -8,9 +8,14 @@ import Worm from "./Worm";
 import WormPiece from "./objects/WormPiece";
 import CONFIG from "./constants";
 import { IPSeudoItem } from "./interfaces/IPseudoItem";
+import Canvas from "../motor/Canvas";
 
 export interface JSONCoords {
     name: string,
+    resolution?: {
+        width: number,
+        height: number
+    },
     items: { [key: string]: {x: number, y: number, index: number, spin?: number, flip?: boolean }[] }
 }
 
@@ -52,6 +57,19 @@ export class WormGame extends GameMap {
     public loadJSON(json: JSONCoords, gameObjects: any) {
         if(Object.keys(json.items).some(itemName => typeof gameObjects[itemName] === "undefined")) throw new Error("Invalid items")
         if(!json.items["worm"]) throw new Error("Worm is not defined") 
+
+        if(json.resolution) {
+            Canvas.getCanvas().width = json.resolution.width
+            Canvas.getCanvas().height = json.resolution.height
+        } else {
+            Canvas.getCanvas().width = 1200
+            Canvas.getCanvas().height = 720
+        }
+
+        Object.values(gameObjects).forEach(v => (v as typeof BaseObject).resetAllItems())
+        this.get().forEach(v => this.remove(v))
+        this.stop = false
+        this.wonPiece = null
 
         this.name = json.name
 

@@ -60,9 +60,25 @@ export default abstract class BaseObject extends Square {
         return [this.nextX, this.nextY]
     }
 
+    public getDistanceX(bo: BaseObject) {
+        return this.getX() - bo.getX()
+    }
+
+    public getDistanceY(bo: BaseObject) {
+        return this.getY() - bo.getY()
+    }
+
+    /**
+     * Calculate the distance of X and Y between the this object and bo (Base Object)
+     * @param bo {BaseObject.class}
+     */
+    public getDistance(bo: BaseObject): [ distX: number, distY: number ] {
+        return [this.getDistanceX(bo), this.getDistanceY(bo)]
+    }
+
     public setTransition({ next, dir, cb, onlyFrame, frames = 10 }: { next: number, dir: "X" | "Y", onlyFrame: boolean, cb?: () => void, frames?: number }) {
         const getterDirLocation = onlyFrame ? () => this.getFrameProperty(`frame${dir}`)! : () => this[`get${dir}`]()
-        const setterDirLocation = onlyFrame ? (v: number) => this.setFrameProperty(`frame${dir}`, getterDirLocation() + v) : (v: number) => this[`set${dir}`](v)
+        const setterDirLocation = onlyFrame ? (v: number) => this.setFrameProperty(`frame${dir}`, getterDirLocation() + v) : (v: number) => this[`add${dir}`](v)
 
         this[`next${dir}`] = next
         this[`transition${dir}`] =
@@ -96,28 +112,24 @@ export default abstract class BaseObject extends Square {
         })
     }
     
-    public setTransitionY(newY: number, cb?: () => void) {
-        this.setFrameProperty("syncLocation", false)
+    public setTransitionY(newY: number, onlyFrame: boolean, cb?: () => void) {
         this.setTransition({
                 next: newY,
                 dir: "Y",
-                onlyFrame: true,
+                onlyFrame,
             cb: () => {
-                this.setFrameProperty("syncLocation", true)
                 this.setY(newY)
                 cb && cb()
             }
         })
     }
     
-    public setTransitionX(newX: number, cb?: () => void) {
-        this.setFrameProperty("syncLocation", false)
+    public setTransitionX(newX: number, onlyFrame: boolean, cb?: () => void) {
         this.setTransition({
                 next: newX,
                 dir: "X",
-                onlyFrame: true,
+                onlyFrame,
             cb: () => {
-                this.setFrameProperty("syncLocation", true)
                 this.setX(newX)
                 cb && cb()
             }

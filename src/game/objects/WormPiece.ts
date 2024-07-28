@@ -12,7 +12,7 @@ export default class WormPiece extends BaseObject {
     constructor({ index, spin, ...data }: IPSeudoItem) {
         super({
             ...data,
-            paintPriority: 71,
+            paintPriority: 98,
             width: CONFIG.SIZE,
             height: CONFIG.SIZE,
             frame: { index, textureId: "worm", columns: 2, frameSize: 50, spin },
