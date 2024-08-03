@@ -17,8 +17,6 @@ export default class Hole extends BaseObject {
             frame: { index, textureId: "hole", columns: 1, totalFrames: 1, frameSize: 60, delX: -5, delY: -5, spin },
             group: [Hole]
         })
-
-        this.fill = "black"
     }
 
     public update(): void {
@@ -37,7 +35,6 @@ export default class Hole extends BaseObject {
         const addX = WormGame.floorCoord(this.getX() - headCube.getX())
         const addY = WormGame.floorCoord(this.getY() - headCube.getY())
 
-        console.log(addX, addY)
         reverseWorm.push(
             this,
             holeCopy.setX(holeCopy.getX() + addX).setY(holeCopy.getY() + addY),

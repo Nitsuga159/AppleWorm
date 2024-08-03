@@ -10,6 +10,7 @@ import CONFIG from "./constants";
 import { IPSeudoItem } from "./interfaces/IPseudoItem";
 import Canvas from "../motor/Canvas";
 import Start from "./objects/Start";
+import Flash from "./objects/Flash";
 
 export interface JSONCoords {
     name: string,
@@ -17,7 +18,7 @@ export interface JSONCoords {
         width: number,
         height: number
     },
-    items: { [key: string]: {x: number, y: number, index: number, spin?: number, flip?: boolean }[] }
+    items: { [key: string]: { x: number, y: number, index: number, spin?: number, flip?: boolean }[] }
 }
 
 export enum MODE {
@@ -33,11 +34,17 @@ export class WormGame extends GameMap {
     private stop: boolean = false
     private wonPiece: BaseObject[] | null = null
 
+    constructor() {
+        super()
+
+        this.add(Flash)
+    }
+
     public setWonPiece(piece: BaseObject[]) {
         this.wonPiece = piece
     }
 
-    public getWonPiece(){
+    public getWonPiece() {
         return this.wonPiece
     }
 
@@ -56,67 +63,76 @@ export class WormGame extends GameMap {
     }
 
     public loadJSON(json: JSONCoords, gameObjects: any) {
-        if(Object.keys(json.items).some(itemName => typeof gameObjects[itemName] === "undefined")) throw new Error("Invalid items")
-        if(!json.items["worm"]) throw new Error("Worm is not defined") 
+        Flash.setOnHalf(() => {
+            if (Object.keys(json.items).some(itemName => typeof gameObjects[itemName] === "undefined")) throw new Error("Invalid items")
+            if (!json.items["worm"]) throw new Error("Worm is not defined")
 
-        if(json.resolution) {
-            Canvas.getCanvas().width = json.resolution.width
-            Canvas.getCanvas().height = json.resolution.height
-        } else {
-            Canvas.getCanvas().width = 1200
-            Canvas.getCanvas().height = 720
-        }
-
-        Object.values(gameObjects).forEach(v => (v as typeof BaseObject).resetAllItems())
-        this.get().forEach(v => this.remove(v))
-        this.stop = false
-        this.wonPiece = null
-
-        this.name = json.name
-
-        const coors: any = {}
-        for(let itemKey in json.items) {
-            for(let { x, y } of json.items[itemKey]) {
-                if(coors[x + "-" + y]) {
-                    throw new Error("Has repeated coords")
-                } else {
-                    coors[x + "-" + y] = 1
-                }
-
-                if(x % CONFIG.SIZE !== 0 || y % CONFIG.SIZE !== 0) {
-                    throw new Error("Invalid size coords")
-                }
-            }
-        }
-
-        for(let itemKey in json.items) {
-            if(itemKey === "worm") {
-                continue;
+            if (json.resolution) {
+                Canvas.getCanvas().width = json.resolution.width
+                Canvas.getCanvas().height = json.resolution.height
+            } else {
+                Canvas.getCanvas().width = 1200
+                Canvas.getCanvas().height = 720
             }
 
-            for(let { x, y, index, spin, flip } of json.items[itemKey]) {
-                const item = new gameObjects[itemKey]({ x, y, index, spin, flip })
+            Object.values(gameObjects).forEach(v => (v as typeof Item).resetAllItems())
+            this.get().forEach(v => v.automaticRemove() && this.remove(v))
+            this.stop = false
+            this.wonPiece = null
 
-                if(this.mode === MODE.EDITOR) {
-                    const instance = new MouseMove({ target: item, encapsulate: true, onNewLocation: (n) => {
-                        if(game.get().some(i => BaseItem.matchLocation((WormGame.roundCoords([n.x, n.y]) as [number, number]), i.getLocation()))) {
-                            item.setLocation(instance.getPrevLocation().x, instance.getPrevLocation().y)
-                        } else {
-                            item.setLocation(...(WormGame.roundCoords([n.x, n.y]) as [number, number]))
-                        }
-                    } })
+            this.name = json.name
+
+            const coors: any = {}
+            for (let itemKey in json.items) {
+                for (let { x, y } of json.items[itemKey]) {
+                    if (coors[x + "-" + y]) {
+                        throw new Error("Has repeated coords")
+                    } else {
+                        coors[x + "-" + y] = 1
+                    }
+
+                    if (x % CONFIG.SIZE !== 0 || y % CONFIG.SIZE !== 0) {
+                        throw new Error("Invalid size coords")
+                    }
+                }
+            }
+
+            for (let itemKey in json.items) {
+                if (itemKey === "worm") {
+                    continue;
                 }
 
-                this.add(item)
-            }
-        }
+                for (let { x, y, index, spin, flip } of json.items[itemKey]) {
+                    const item = new gameObjects[itemKey]({ x, y, index, spin, flip })
 
-        this.add(new Start())
-        this.add(new Start())
-        this.add(new Start())
-        this.add(new Start())
-        this.worm = new Worm(json.items["worm"].map(i => new WormPiece(i as IPSeudoItem)))
-        this.json = json
+                    if (this.mode === MODE.EDITOR) {
+                        const instance = new MouseMove({
+                            target: item, encapsulate: true, onNewLocation: (n) => {
+                                if (game.get().some(i => BaseItem.matchLocation((WormGame.roundCoords([n.x, n.y]) as [number, number]), i.getLocation()))) {
+                                    item.setLocation(instance.getPrevLocation().x, instance.getPrevLocation().y)
+                                } else {
+                                    item.setLocation(...(WormGame.roundCoords([n.x, n.y]) as [number, number]))
+                                }
+                            }
+                        })
+                    }
+
+                    this.add(item)
+                }
+            }
+
+
+            this.add(new Start())
+            this.add(new Start())
+            this.add(new Start())
+            this.add(new Start())
+            this.worm = new Worm(json.items["worm"].map(i => new WormPiece(i as IPSeudoItem)))
+            this.json = json
+
+            this.setStop(false)
+        })
+        
+        Flash.start()
 
         return this
     }
@@ -133,11 +149,11 @@ export class WormGame extends GameMap {
         return itemConstructor.getAllItems().map(i => {
             const item = { x: i.getX(), y: i.getY(), index: i.getFrameProperty("index") } as any
 
-            if(i.getFrameProperty("spin")) {
+            if (i.getFrameProperty("spin")) {
                 item.spin = i.getFrameProperty("spin")
             }
 
-            if(i.getFrameProperty("flip")) {
+            if (i.getFrameProperty("flip")) {
                 item.flip = i.getFrameProperty("flip")
             }
 
@@ -154,8 +170,8 @@ export class WormGame extends GameMap {
     }
 
     public getFrom(location: [x: number, y: number]) {
-        for(let item of this.get()) {
-            if(BaseItem.matchLocation(WormGame.floorCoords(location), WormGame.floorCoords(item.getLocation()))) {
+        for (let item of this.get()) {
+            if (BaseItem.matchLocation(WormGame.floorCoords(location), WormGame.floorCoords(item.getLocation()))) {
                 return item
             }
         }

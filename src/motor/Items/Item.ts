@@ -96,6 +96,10 @@ export default abstract class Item extends Frame(DefaultCollisions(BaseItem)) {
         this.debug = debug
     }
 
+    public automaticRemove(): boolean {
+        return true
+    }
+
     abstract update(): void
 
     abstract paint(ctx: CanvasRenderingContext2D): void

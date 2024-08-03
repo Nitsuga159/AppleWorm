@@ -18,7 +18,7 @@ import Levels from "./game/Levels";
 import Flash from "./game/objects/Flash";
 
 Levels
-game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start, Flash)
+game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
 
 Canvas.init({ id: "root", width: 1300, height: 820 })
 
@@ -108,6 +108,7 @@ const canvas = Canvas.getCanvas()
 const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
 gradient.addColorStop(0.15, '#081325'); // 15% position
 gradient.addColorStop(0.50, '#030408'); // 50% position
+
 game.execute(() => {
     const canvas = Canvas.getCanvas()
     const ctx = Canvas.getCtx()
@@ -118,12 +119,14 @@ game.execute(() => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore()
 
+    game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
+    if(game.getStop()) return;
+
     if(game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
-        return game.add(new Flash(() => game.reset().loadJSON(game.getLoadedJSON()!, GAME_OBJETS).setStop(false)))
+        return game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
     }
     game.getWorm()?.checkCollision()
     Skewers.checkCollision()
-    game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
 })
 
 game.setMode(MODE.EDITOR)

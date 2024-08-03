@@ -3,41 +3,62 @@ import Item from "../../motor/Items/Item";
 import Square from "../../motor/Shape/Square";
 import game from "../game";
 
-export default class Flash extends Item {
+class Flash extends Item {
     private radius = 5
-    private sum = 10
-    private onFinish: any
+    private sum = 130
+    private enabled = false
+    private onEnd?: () => void
+    private onHalf?: () => void
 
     shouldPaint(): boolean {
-        return true
+        return this.enabled
     }
 
-    constructor(onFinish: any) {
+    public automaticRemove(): boolean {
+        return false
+    }
+
+    constructor() {
         super({
-            width: 30, height: 30, x: Canvas.getCanvas().width / 2, y: Canvas.getCanvas().height / 2,
+            width: 30, height: 30, x: 0, y: 0,
             paintPriority: 100
         })
+    }
 
-        this.onFinish = onFinish
+    public setOnHalf(onHalf: () => void) {
+        this.onHalf = onHalf
+    }
+
+    public start() {
+        if(this.enabled) return;
+
+        this.setX(Canvas.getCanvas().width / 2)
+        this.setY(Canvas.getCanvas().height / 2)
+        this.radius = 5
+        this.sum = 130
+
+        this.enabled = true
     }
 
     update(): void {
-        console.log(this.radius, Canvas.getCanvas().width)
+        if(!this.enabled) return;
+
         this.radius += this.sum
 
-        if((this.radius) >= Canvas.getCanvas().width) {
+        if(this.radius >= Canvas.getCanvas().width * 1.5) {
             this.sum = -Math.abs(this.sum)
+            this.onHalf && this.onHalf()
         }
 
         if(this.radius < 0) {
-            game.remove(this)
-            this.onFinish()
+            this.enabled = false
+            this.onEnd && this.onEnd()
         }
     }
 
     paint(ctx: CanvasRenderingContext2D): void {
-        const x = this.getX()
-        const y = this.getY()
+        const x = Canvas.getCanvas().width / 2
+        const y = Canvas.getCanvas().height / 2
         const radius = this.radius / 2
 
         const gradientRadius = radius;
@@ -47,7 +68,7 @@ export default class Flash extends Item {
             x, y, gradientRadius
         );
 
-        gradient.addColorStop(0.1, 'rgba(255, 255, 255, 0.7)');
+        gradient.addColorStop(0.1, 'rgba(255, 255, 255, 1)');
         gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
@@ -59,3 +80,5 @@ export default class Flash extends Item {
         ctx.fill();
     }
 }
+
+export default new Flash()
