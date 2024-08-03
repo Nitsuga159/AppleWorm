@@ -1,7 +1,6 @@
 import Apple from "./game/objects/Apple";
 import BaseObject from "./game/objects/BaseObject";
 import Block from "./game/objects/Block";
-import Cloud from "./game/objects/Cloud";
 import Hole from "./game/objects/Hole";
 import Menu from "./game/Menu";
 import Skewers from "./game/objects/Skewers";
@@ -15,8 +14,11 @@ import EventController from "./motor/EventController";
 import MouseMove from "./motor/Functions/MouseMove/MouseMove";
 import Worm from "./game/Worm";
 import Start from "./game/objects/Start";
+import Levels from "./game/Levels";
+import Flash from "./game/objects/Flash";
 
-game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
+Levels
+game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start, Flash)
 
 Canvas.init({ id: "root", width: 1300, height: 820 })
 
@@ -27,6 +29,7 @@ const map: { [key: string]: number } = {
     "ArrowDown": 50,
 }
 
+
 document.addEventListener("keydown", (e) => {
     if (e.key === "Backspace" && menu.getGameSelectedItem() !== null) return game.remove(menu.getGameSelectedItem()!)
     if (e.key === "g" && menu.getGameSelectedItem() !== null) return menu.getGameSelectedItem()!.rotate()
@@ -34,7 +37,7 @@ document.addEventListener("keydown", (e) => {
     const worm = game.getWorm()!
     if (game.getStop() || typeof map[e.key] === "undefined" || worm.isMoving() || worm.isFalling()) return;
 
-    const plus = (map as any)[e.key];
+    let plus = (map as any)[e.key];
     const addX = (e.key === "ArrowLeft" || e.key === "ArrowRight" ? plus : 0)
     const addY = (e.key === "ArrowUp" || e.key === "ArrowDown" ? plus : 0)
 
@@ -42,9 +45,9 @@ document.addEventListener("keydown", (e) => {
     const [headX, headY] = headCube.getLocation()
 
     if (addY < 0 && worm.isVertical()) return;
-
     const item = game.getFrom([headX + addX, headY + addY]) as BaseObject
 
+    
     if (item instanceof BaseObject) {
         const canPass = item.onCollide(headCube, game)
 
@@ -54,18 +57,25 @@ document.addEventListener("keydown", (e) => {
     if (!(item instanceof Hole)) {
         let prev: number[] = [headX, headY]
 
+        
         headCube.setFrameProperty("syncLocation", false)
-
         if (addX) {
             headCube.setTransitionX(headX + plus, true, () => {
                 if (item instanceof Apple) game.remove(item)
                 headCube.setFrameProperty("syncLocation", true)
             })
         } else {
-            headCube.setTransitionY(headY + plus, true, () => {
-                if (item instanceof Apple) game.remove(item)
+            if(plus < 0) {
                 headCube.setFrameProperty("syncLocation", true)
-            })
+                headCube.setTransitionY(headY + plus, false, () => {
+                    if (item instanceof Apple) game.remove(item)
+                })
+            } else {
+                headCube.setTransitionY(headY + plus, true, () => {
+                    if (item instanceof Apple) game.remove(item)
+                        headCube.setFrameProperty("syncLocation", true)
+                })
+            }
         }
 
         worm.getQueue().forEach((s, index) => {
@@ -93,9 +103,24 @@ document.addEventListener("keydown", (e) => {
 
 const menu = new Menu()
 
-game.add(new Start())
-
+const ctx = Canvas.getCtx()
+const canvas = Canvas.getCanvas()
+const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+gradient.addColorStop(0.15, '#081325'); // 15% position
+gradient.addColorStop(0.50, '#030408'); // 50% position
 game.execute(() => {
+    const canvas = Canvas.getCanvas()
+    const ctx = Canvas.getCtx()
+    ctx.save()
+
+    // Apply gradient as fill style
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore()
+
+    if(game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
+        return game.add(new Flash(() => game.reset().loadJSON(game.getLoadedJSON()!, GAME_OBJETS).setStop(false)))
+    }
     game.getWorm()?.checkCollision()
     Skewers.checkCollision()
     game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
@@ -170,7 +195,6 @@ importFile?.addEventListener("change", async () => {
         game.loadJSON(JSON.parse(await importFile.files![0].text()), GAME_OBJETS)
     }
 })
-
 
 //reload button
 const reloadButton = document.getElementById("reload-button")

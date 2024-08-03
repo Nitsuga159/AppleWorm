@@ -1,216 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code</title>
     <style>
-        * {
-            padding: 0;
-            margin: 0;
-            font-family: sans-serif;
-            overflow: hidden;
-            user-select: none;
-        }
+      * {
+        padding: 0;
+        margin: 0;
+        font-family: sans-serif;
+        overflow: hidden;
+        user-select: none;
+      }
 
-        body {
-            width: 100vw;
-            height: 100vh;
-        }
+      button {
+        transform: translateY(0px);
+        transition: transform 0.3s ease;
+      }
 
+      button:active {
+        transform: translateY(5px);
+      }
+
+      body {
+        margin: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #050505; /* Fondo oscuro */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden; /* Evita barras de desplazamiento */
+      }
+
+      .canvas-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      canvas {
+       /* Fondo degradado */
+        position: absolute;
+        max-width: 100%;
+        max-height: 100%;
+        width: 100vw; /* Ajusta al ancho de la ventana */
+        height: auto; /* Ajusta la altura automáticamente */
+        object-fit: contain; /* Mantiene la relación de aspecto del canvas */
+      }
+      @media (min-aspect-ratio: 1/1) {
         canvas {
-            background: linear-gradient(#081325 15%, #030408 50%);
-            position: absolute;
-            width: 100%;
+          width: auto;
+          height: 100vh; /* Ajusta la altura de la ventana */
         }
+      }
 
-        /* MENU CSS */
+      /* MENU CSS */
 
-        .menu {
-            position: absolute;
-            width: 250px;
-            height: 500px;
-            text-align: center;
-            border-radius: 5px;
-            background-color: #2e2e2e;
-            overflow: hidden;
-            user-select: none;
-            transition: height .3s ease;
-        }
+      .menu {
+        position: absolute;
+        top: 0px;
+        width: 250px;
+        height: 500px;
+        text-align: center;
+        border-radius: 5px;
+        background-color: #2e2e2e;
+        overflow: hidden;
+        user-select: none;
+        transition: height 0.3s ease;
+      }
 
-        #menu-items {
-            height: calc(100% - 60px);
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: .5rem;
-            padding: 20px 1rem;
-            overflow-y: auto;
-        }
+      #menu-items {
+        height: calc(100% - 60px);
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 20px 1rem;
+        overflow-y: auto;
+      }
 
-        #menu-nav {
-            display: flex;
-            align-items: center;
-            height: 30px;
-            padding: 0 1rem;
-            font-size: 1.2rem;
-            color: white;
-            background-color: #131313;
-            display: flex;
-            justify-content: space-between;
-            cursor: grab;
-        }
+      #menu-nav {
+        display: flex;
+        align-items: center;
+        height: 30px;
+        padding: 0 1rem;
+        font-size: 1.2rem;
+        color: white;
+        background-color: #131313;
+        display: flex;
+        justify-content: space-between;
+        cursor: grab;
+      }
 
-        #menu-nav:active {
-            cursor: grabbing;
-        }
+      #menu-nav:active {
+        cursor: grabbing;
+      }
 
-        #menu-nav>button {
-            width: 30px;
-            padding: .1rem 0;
-            cursor: pointer;
-            color: white;
-            background-color: rgb(53, 53, 53);
-            border: none;
-            border-radius: 5px;
-        }
+      #menu-nav > button {
+        width: 30px;
+        padding: 0.1rem 0;
+        cursor: pointer;
+        color: white;
+        background-color: rgb(53, 53, 53);
+        border: none;
+        border-radius: 5px;
+      }
 
-        #menu-items::-webkit-scrollbar {
-            width: 10px;
-        }
+      #menu-items::-webkit-scrollbar {
+        width: 10px;
+      }
 
-        #menu-items::-webkit-scrollbar-thumb {
-            background-color: rgb(24, 24, 24);
-        }
+      #menu-items::-webkit-scrollbar-thumb {
+        background-color: rgb(24, 24, 24);
+      }
 
-        #menu-items::-webkit-scrollbar-track {
-            background-color: rgb(40, 40, 40);
-        }
+      #menu-items::-webkit-scrollbar-track {
+        background-color: rgb(40, 40, 40);
+      }
 
-        #menu-items>img {
-            cursor: pointer;
-            width: 50px;
-            height: 50px;
-            border-radius: 4px;
-            background-color: rgb(40, 38, 38);
-        }
+      #menu-items > img {
+        cursor: pointer;
+        width: 50px;
+        height: 50px;
+        border-radius: 4px;
+        background-color: rgb(40, 38, 38);
+      }
 
-        .menu-close {
-            height: 30px;
-        }
+      .menu-close {
+        height: 30px;
+      }
 
-        .item-selected {
-            box-shadow: 0 0 0 3px yellow;
-        }
+      .item-selected {
+        box-shadow: 0 0 0 3px yellow;
+      }
 
-        #export-import-buttons {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-        }
+      #export-import-buttons {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+      }
 
-        #export-import-buttons>button {
-            background-color: #2e2e2e;
-            color: white;
-            border-radius: 4px;
-            padding: .3rem .5rem;
-            border: none;
-            cursor: pointer;
-        }
+      #export-import-buttons > button {
+        background-color: #2e2e2e;
+        color: white;
+        border-radius: 4px;
+        padding: 0.3rem 0.5rem;
+        border: none;
+        cursor: pointer;
+      }
 
-        .buttons {
-            display: flex;
-            flex-direction: column;
-            gap: .25rem;
-            bottom: 15px;
-            left: 15px;
-            position: absolute;
-        }
+      .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        bottom: 15px;
+        left: 15px;
+        position: absolute;
+      }
 
-        .buttons > div {
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 34px;
-            height: 34px;
-            border-radius: 50%;
-            background-color: #2e2e2e;
-            padding: .1rem;
-        }
+      .buttons > div {
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background-color: #2e2e2e;
+        padding: 0.1rem;
+      }
+
+      /* LEVELS */
+      .grid-container {
+        z-index: 99;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 30px;
+        width: 50vw;
+        padding: 1rem;
+      }
+
+      .grid-container > button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #243654;
+        box-shadow: 5px 5px #162135;
+        color: white;
+        font-size: 2vw;
+        font-weight: bold;
+        border-radius: 10px;
+        aspect-ratio: 1 / 1;
+        cursor: pointer;
+        padding: 1.5rem;
+        border: none;
+      }
+
+      .grid-container > button:active {
+        background-color: #162135;
+      }
+
+      .hidden {
+        animation: hide 1s ease forwards;
+      }
+
+      .show {
+        animation: show .7s ease forwards;
+      }
+
+      @keyframes hide {
+        0% { transform: translateY(0); }
+        20% {  transform: translateY(15px); }
+        100% { transform: translateY(-100vh); }
+      }
+      
+      @keyframes show {
+        0% { transform: translateY(-100vh); }
+        80% {  transform: translateY(15px); }
+        100% { transform: translateY(0); }
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <div>
-        <canvas id="root"></canvas>
-        <div id="menu" class="menu menu-close">
-            <div id="menu-nav">
-                <h5>Menu - Items</h5>
-                <button id="menu-button">+</button>
-            </div>
-            <div id="menu-items">
-            </div>
-        </div>
-        <div>
-            
-        </div>
-        <div id="export-import-buttons">
-            <button id="export-button">Export</button>
-            <button id="import-button">Import</button>
-            <input id="import-file" type="file" hidden accept="application/json" />
-        </div>
-        <div class="buttons">
-            <div id="list-button" class="list-button">
-                <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"
-                    fill="white" width="24" height="256" viewBox="0 0 256 256" xml:space="preserve">
-
-                    <defs>
-                    </defs>
-                    <g style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10; fill-rule: nonzero; opacity: 1;"
-                        transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)">
-                        <path
-                            d="M 85.814 21.474 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 c 2.312 0 4.186 1.874 4.186 4.186 S 88.126 21.474 85.814 21.474 z"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round" />
-                        <path
-                            d="M 85.814 49.186 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 C 88.126 40.814 90 42.688 90 45 S 88.126 49.186 85.814 49.186 z"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round" />
-                        <path
-                            d="M 85.814 76.897 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 c 2.312 0 4.186 1.874 4.186 4.186 S 88.126 76.897 85.814 76.897 z"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform=" matrix(1 0 0 1 0 0) " stroke-linecap="round" />
-                        <circle cx="7.558" cy="17.288" r="7.558"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform="  matrix(1 0 0 1 0 0) " />
-                        <circle cx="7.558" cy="44.998" r="7.558"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform="  matrix(1 0 0 1 0 0) " />
-                        <circle cx="7.558" cy="72.708" r="7.558"
-                            style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-linejoin: miter; stroke-miterlimit: 10;  fill-rule: nonzero; opacity: 1;"
-                            transform="  matrix(1 0 0 1 0 0) " />
-                    </g>
-                </svg>
-            </div>
-            <div id="reload-button" class="reload-button">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="white" width="24" height="24" viewBox="0 0 25 25">
-                    <path
-                        d="M13.5 2c-5.621 0-10.211 4.443-10.475 10h-3.025l5 6.625 5-6.625h-2.975c.257-3.351 3.06-6 6.475-6 3.584 0 6.5 2.916 6.5 6.5s-2.916 6.5-6.5 6.5c-1.863 0-3.542-.793-4.728-2.053l-2.427 3.216c1.877 1.754 4.389 2.837 7.155 2.837 5.79 0 10.5-4.71 10.5-10.5s-4.71-10.5-10.5-10.5z" />
-                </svg>
-            </div>
-        </div>
+  <body>
+    <div class="canvas-container">
+      <canvas id="root"></canvas>
     </div>
-    <img id="block" src="assets/block.png" style="display: none;" />
-    <img id="apple" src="assets/apple.png" style="display: none;" />
-    <img id="stone" src="assets/stone.png" style="display: none;" />
-    <img id="worm" src="assets/worm.png" style="display: none;" />
-    <img id="skewers" src="assets/skewers.png" style="display: none;" />
-    <img id="hole" src="assets/hole.png" style="display: none;" />
-    <img id="cloud" src="assets/cloud.png" style="display: none;" />
-    <img id="start" src="assets/start.png" style="display: none;" />
+    <div id="grid-container" class="grid-container hidden"></div>
+    <div id="menu" class="menu menu-close">
+      <div id="menu-nav">
+        <h5>Menu - Items</h5>
+        <button id="menu-button">+</button>
+      </div>
+      <div id="menu-items"></div>
+    </div>
+    <div id="export-import-buttons">
+      <button id="export-button">Export</button>
+      <button id="import-button">Import</button>
+      <input id="import-file" type="file" hidden accept="application/json" />
+    </div>
+    <div class="buttons">
+      <div id="list-button" class="list-button">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          version="1.1"
+          fill="white"
+          width="24"
+          height="256"
+          viewBox="0 0 256 256"
+          xml:space="preserve"
+        >
+          <defs></defs>
+          <g
+            style="
+              stroke: none;
+              stroke-width: 0;
+              stroke-dasharray: none;
+              stroke-linecap: butt;
+              stroke-linejoin: miter;
+              stroke-miterlimit: 10;
+              fill-rule: nonzero;
+              opacity: 1;
+            "
+            transform="translate(1.4065934065934016 1.4065934065934016) scale(2.81 2.81)"
+          >
+            <path
+              d="M 85.814 21.474 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 c 2.312 0 4.186 1.874 4.186 4.186 S 88.126 21.474 85.814 21.474 z"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform=" matrix(1 0 0 1 0 0) "
+              stroke-linecap="round"
+            />
+            <path
+              d="M 85.814 49.186 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 C 88.126 40.814 90 42.688 90 45 S 88.126 49.186 85.814 49.186 z"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform=" matrix(1 0 0 1 0 0) "
+              stroke-linecap="round"
+            />
+            <path
+              d="M 85.814 76.897 h -58.21 c -2.312 0 -4.186 -1.874 -4.186 -4.186 s 1.874 -4.186 4.186 -4.186 h 58.21 c 2.312 0 4.186 1.874 4.186 4.186 S 88.126 76.897 85.814 76.897 z"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform=" matrix(1 0 0 1 0 0) "
+              stroke-linecap="round"
+            />
+            <circle
+              cx="7.558"
+              cy="17.288"
+              r="7.558"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform="  matrix(1 0 0 1 0 0) "
+            />
+            <circle
+              cx="7.558"
+              cy="44.998"
+              r="7.558"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform="  matrix(1 0 0 1 0 0) "
+            />
+            <circle
+              cx="7.558"
+              cy="72.708"
+              r="7.558"
+              style="
+                stroke: none;
+                stroke-width: 1;
+                stroke-dasharray: none;
+                stroke-linecap: butt;
+                stroke-linejoin: miter;
+                stroke-miterlimit: 10;
+                fill-rule: nonzero;
+                opacity: 1;
+              "
+              transform="  matrix(1 0 0 1 0 0) "
+            />
+          </g>
+        </svg>
+      </div>
+      <div id="reload-button" class="reload-button">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="white"
+          width="24"
+          height="24"
+          viewBox="0 0 25 25"
+        >
+          <path
+            d="M13.5 2c-5.621 0-10.211 4.443-10.475 10h-3.025l5 6.625 5-6.625h-2.975c.257-3.351 3.06-6 6.475-6 3.584 0 6.5 2.916 6.5 6.5s-2.916 6.5-6.5 6.5c-1.863 0-3.542-.793-4.728-2.053l-2.427 3.216c1.877 1.754 4.389 2.837 7.155 2.837 5.79 0 10.5-4.71 10.5-10.5s-4.71-10.5-10.5-10.5z"
+          />
+        </svg>
+      </div>
+    </div>
+    <img id="block" src="assets/block.png" style="display: none" />
+    <img id="apple" src="assets/apple.png" style="display: none" />
+    <img id="stone" src="assets/stone.png" style="display: none" />
+    <img id="worm" src="assets/worm.png" style="display: none" />
+    <img id="skewers" src="assets/skewers.png" style="display: none" />
+    <img id="hole" src="assets/hole.png" style="display: none" />
+    <img id="cloud" src="assets/cloud.png" style="display: none" />
+    <img id="start" src="assets/start.png" style="display: none" />
     <script type="module" src="bundle.min.js"></script>
-</body>
-
+  </body>
 </html>

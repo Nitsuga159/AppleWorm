@@ -45,7 +45,8 @@ function Frame<TBase extends Class<BaseItem>>(Base: TBase) {
     private increment = 1
 
     constructor(...args: any[]) {
-      const { frame, ...data } = args[0] as { frame: IFrame };
+      let { frame, ...data } = args[0] as { frame: IFrame };
+      frame = frame || {}
       super(data);
 
       if (frame?.textureId) {

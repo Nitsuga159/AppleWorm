@@ -2,7 +2,7 @@ import Canvas from "./Canvas";
 
 type Listener<K extends keyof HTMLElementEventMap> = (ev: HTMLElementEventMap[K]) => any
 
-const normilizeCoors = (x: number, y: number) => [x * (Canvas.getCanvas().width / Canvas.getCanvas().getBoundingClientRect().width), y * (Canvas.getCanvas().height / Canvas.getCanvas().getBoundingClientRect().height)]
+const normilizeCoors = (x: number, y: number) => [(x - Canvas.getCanvas().offsetLeft) * (Canvas.getCanvas().width / Canvas.getCanvas().getBoundingClientRect().width), (y - Canvas.getCanvas().offsetTop) * (Canvas.getCanvas().height / Canvas.getCanvas().getBoundingClientRect().height)]
 
 export default class EventController {
     private static eventsController = new Map<keyof HTMLElementEventMap, Listener<keyof HTMLElementEventMap>[]>()

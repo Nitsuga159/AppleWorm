@@ -46,7 +46,7 @@ export default class Stone extends BaseObject {
         game.forEachItemConstructor(
             this.getTarget(), item => {
                 if(item !== this && this.itemCollision(this, item) === DIRECTION.TOP) {
-                    this.setY(Math.floor(this.getY() / CONFIG.SIZE) * CONFIG.SIZE)
+                    this.setY(item.getY() - this.getHeight())
                     this.falling = false
                     return true
                 }
@@ -65,7 +65,6 @@ export default class Stone extends BaseObject {
         if(item !== null && !(item instanceof Skewers)) return false;
 
         this.getGravity().setIsEnabled(false);
-        this.setFrameProperty("syncLocation", true)
         if(addX) {
             this.setTransitionX(this.getX() + addX, false, () => this.getGravity().setIsEnabled(true));
         } else {

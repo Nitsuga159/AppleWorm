@@ -9,6 +9,7 @@ import WormPiece from "./objects/WormPiece";
 import CONFIG from "./constants";
 import { IPSeudoItem } from "./interfaces/IPseudoItem";
 import Canvas from "../motor/Canvas";
+import Start from "./objects/Start";
 
 export interface JSONCoords {
     name: string,
@@ -110,6 +111,10 @@ export class WormGame extends GameMap {
             }
         }
 
+        this.add(new Start())
+        this.add(new Start())
+        this.add(new Start())
+        this.add(new Start())
         this.worm = new Worm(json.items["worm"].map(i => new WormPiece(i as IPSeudoItem)))
         this.json = json
 
