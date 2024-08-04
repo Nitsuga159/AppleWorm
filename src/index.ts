@@ -56,7 +56,7 @@ document.addEventListener("keydown", (e) => {
     if (!(item instanceof Hole)) {
         let prev: number[] = [headX, headY]
 
-        
+
         headCube.setFrameProperty("syncLocation", false)
         if (addX) {
             headCube.setTransitionX(headX + plus, true, () => {
@@ -64,7 +64,7 @@ document.addEventListener("keydown", (e) => {
                 headCube.setFrameProperty("syncLocation", true)
             })
         } else {
-            if(plus < 0) {
+            if (plus < 0) {
                 headCube.setFrameProperty("syncLocation", true)
                 headCube.setTransitionY(headY + plus, false, () => {
                     if (item instanceof Apple) game.remove(item)
@@ -72,7 +72,7 @@ document.addEventListener("keydown", (e) => {
             } else {
                 headCube.setTransitionY(headY + plus, true, () => {
                     if (item instanceof Apple) game.remove(item)
-                        headCube.setFrameProperty("syncLocation", true)
+                    headCube.setFrameProperty("syncLocation", true)
                 })
             }
         }
@@ -109,23 +109,23 @@ gradient.addColorStop(0.15, '#081325'); // 15% position
 gradient.addColorStop(0.50, '#030408'); // 50% position
 
 game.execute(() => {
-    const canvas = Canvas.getCanvas()
-    const ctx = Canvas.getCtx()
-    ctx.save()
+    // const canvas = Canvas.getCanvas()
+    // const ctx = Canvas.getCtx()
+    // ctx.save()
 
-    // Apply gradient as fill style
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore()
+    // // Apply gradient as fill style
+    // ctx.fillStyle = gradient;
+    // ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // ctx.restore()
 
     game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
-    if(game.getStop()) return;
-
-    if(game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
-        return game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
-    }
     game.getWorm()?.checkCollision()
     Skewers.checkCollision()
+    if (game.getStop()) return;
+
+    if (game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
+        return game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
+    }
 })
 
 game.setMode(MODE.EDITOR)
@@ -204,3 +204,9 @@ const reloadButton = document.getElementById("reload-button")
 reloadButton?.addEventListener("click", () => {
     game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
 })
+
+// Llama a la función al cargar la página
+game.resizeCanvas();
+
+// Llama a la función al cambiar el tamaño de la ventana
+window.addEventListener('resize', game.resizeCanvas);

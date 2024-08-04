@@ -40,6 +40,27 @@ export class WormGame extends GameMap {
         this.add(Flash)
     }
 
+    resizeCanvas() {
+        const canvas = Canvas.getCanvas()
+        const aspectRatio = canvas.width / canvas.height;
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+    
+        let newWidth, newHeight;
+    
+        if (windowWidth / windowHeight < aspectRatio) {
+            newWidth = windowWidth;
+            newHeight = newWidth / aspectRatio;
+        } else {
+            newHeight = windowHeight;
+            newWidth = newHeight * aspectRatio;
+        }
+    
+        // Ajusta el tamaño del canvas
+        canvas.style.width = `${newWidth}px`;
+        canvas.style.height = `${newHeight}px`;
+    }
+
     public setWonPiece(piece: BaseObject[]) {
         this.wonPiece = piece
     }
@@ -121,7 +142,7 @@ export class WormGame extends GameMap {
                 }
             }
 
-
+            this.resizeCanvas()
             this.add(new Start())
             this.add(new Start())
             this.add(new Start())

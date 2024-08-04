@@ -15,24 +15,7 @@ const normilizeCoors = (x: number, y: number) => {
     const scaleX = realWidth / visualWidth;
     const scaleY = realHeight / visualHeight;
 
-    // Obtener el rectángulo que define la posición y tamaño del canvas
-    const rect = Canvas.getCanvas().getBoundingClientRect();
-
-    // Determinar si el canvas está ajustado al ancho o al alto
-    const isWidthAdjusted = visualWidth / visualHeight > realWidth / realHeight;
-
-    const offsetX = x - rect.left;
-    const offsetY = y - rect.top;
-
-    // Ajuste según si el ancho o alto está ajustado
-    const adjustedX = isWidthAdjusted
-        ? (offsetX / visualWidth) * realWidth
-        : (offsetX / visualWidth) * realWidth;
-    const adjustedY = isWidthAdjusted
-        ? (offsetY / visualHeight) * realHeight
-        : (offsetY / visualHeight) * realHeight;
-
-    return [adjustedX, adjustedY]
+    return [(x - canvas.offsetLeft) * scaleX, (y - canvas.offsetTop) * scaleY]
 }
 
 export default class EventController {

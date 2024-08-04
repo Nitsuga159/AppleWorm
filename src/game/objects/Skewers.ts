@@ -50,7 +50,7 @@ export default class Skewers extends BaseObject {
     }
 
     public static checkCollision() {
-        for(let piece of game.getWorm()?.getQueue() || []) {
+        for(let piece of game.getWorm()?.getPieces() || []) {
             for(let skewer of Skewers.getAllItems()) {
                 if(BaseItem.matchLocation(WormGame.floorCoords(piece.getLocation()), WormGame.floorCoords(skewer.getLocation()))) {
                     game.setStop(true)
