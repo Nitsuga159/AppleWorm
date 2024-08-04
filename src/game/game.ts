@@ -171,7 +171,7 @@ export class WormGame extends GameMap {
 
     public getFrom(location: [x: number, y: number]) {
         for (let item of this.get()) {
-            if (BaseItem.matchLocation(WormGame.floorCoords(location), WormGame.floorCoords(item.getLocation()))) {
+            if (BaseItem.matchLocation(WormGame.floorCoords(location), WormGame.floorCoords(item.getLocation())) && item instanceof BaseObject) {
                 return item
             }
         }

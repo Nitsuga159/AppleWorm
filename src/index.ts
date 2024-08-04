@@ -35,7 +35,7 @@ document.addEventListener("keydown", (e) => {
     if (e.key === "g" && menu.getGameSelectedItem() !== null) return menu.getGameSelectedItem()!.rotate()
 
     const worm = game.getWorm()!
-    if (game.getStop() || typeof map[e.key] === "undefined" || worm.isMoving() || worm.isFalling()) return;
+    if (!Levels.isHidden() || game.getStop() || typeof map[e.key] === "undefined" || worm.isMoving() || worm.isFalling()) return;
 
     let plus = (map as any)[e.key];
     const addX = (e.key === "ArrowLeft" || e.key === "ArrowRight" ? plus : 0)
@@ -47,7 +47,6 @@ document.addEventListener("keydown", (e) => {
     if (addY < 0 && worm.isVertical()) return;
     const item = game.getFrom([headX + addX, headY + addY]) as BaseObject
 
-    
     if (item instanceof BaseObject) {
         const canPass = item.onCollide(headCube, game)
 
@@ -203,5 +202,5 @@ importFile?.addEventListener("change", async () => {
 const reloadButton = document.getElementById("reload-button")
 
 reloadButton?.addEventListener("click", () => {
-    game.reset().loadJSON(game.getLoadedJSON()!, GAME_OBJETS).setStop(false)
+    game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
 })
