@@ -13,6 +13,7 @@ export default abstract class Item extends Frame(DefaultCollisions(BaseItem)) {
     private target: Class<Item>[]
     private paintPriority: number
     private debug: boolean
+    private opacity: number = 1
 
     constructor({ fill, group, target, debug, paintPriority, ...data }: IItem) {
         super(data)
@@ -56,6 +57,14 @@ export default abstract class Item extends Frame(DefaultCollisions(BaseItem)) {
 
     public setPaintPriority(paintPriority: number) {
         this.paintPriority = paintPriority
+    }
+
+    public setOpacity(opacity: number) {
+        this.opacity = opacity
+    }
+
+    public getOpacity() {
+        return this.opacity
     }
 
     public getPaintPriority() {

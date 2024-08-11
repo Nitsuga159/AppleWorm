@@ -1,5 +1,3 @@
-import { IItem } from "../../motor/Items/IItem";
-import Square from "../../motor/Shape/Square";
 import BaseObject from "./BaseObject";
 import CONFIG from "../constants";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
@@ -12,15 +10,15 @@ export default class Block extends BaseObject {
             ...data, 
             width: CONFIG.SIZE, 
             height: CONFIG.SIZE, 
+            canMove: true,
+            canRotate: false,
             paintPriority: 10,
             frame: { index, textureId: "block", columns: 6, rows: 5, frameSize: 50, spin },
             group: [Block] 
         })
-
-        this.fill = "#420"
     }
 
-    public onCollide(_: WormPiece, __: GameMap): boolean {
+    public onWormHeadCollide(_: WormPiece, __: GameMap): boolean {
         return false
     }
 }

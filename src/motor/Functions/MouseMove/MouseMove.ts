@@ -18,7 +18,6 @@ export default class MouseMove {
                 this.onNewLocation?.({ x: target.getX(), y: target.getY() })
             } else {
                 this.prevLocation = { x: target.getX(), y: target.getY() }
-                console.log(this.prevLocation)
             }
         } })
 

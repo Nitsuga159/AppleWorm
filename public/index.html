@@ -3,17 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Code</title>
+    <title>AppleWorm</title>
+    <link rel="shortcut icon" href="assets/sprites/apple.png" type="image/x-icon">
+    <link rel="stylesheet" href="styles/colors.css">
+    <link rel="stylesheet" href="styles/input.css">
+    <link rel="stylesheet" href="styles/popup.css">
+    <link rel="stylesheet" href="styles/menu.css">
     <style>
       * {
         padding: 0;
         margin: 0;
         font-family: sans-serif;
-        overflow: hidden;
         user-select: none;
+        color: white;
       }
 
       button {
+        color: var(--black);
         transform: translateY(0px);
         transition: transform 0.3s ease;
       }
@@ -50,6 +56,10 @@
         width: 100%; /* Ajusta al ancho de la ventana */
         height: 100%; /* Ajusta la altura automáticamente */
         object-fit: contain;
+        background: linear-gradient(
+          #081325 15%,
+          #030408 50%
+        );
       }
 
       /* MENU CSS */
@@ -149,8 +159,7 @@
 
       .buttons {
         display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
+        gap: 1rem;
         bottom: 15px;
         left: 15px;
         position: absolute;
@@ -178,6 +187,8 @@
         gap: 30px;
         width: 50vw;
         padding: 1rem;
+        transform: translateY(0px);
+        transition: all .5s ease;
       }
 
       .grid-container > button {
@@ -200,33 +211,65 @@
         background-color: #162135;
       }
 
+      .grid-container::after {
+        content: "Use Arrow Keys to slide";
+        position: absolute;
+        font-weight: bold;
+        top: -20px;
+        left: 0px;
+      }
+
       .hidden {
-        animation: hide 1s ease forwards;
+        transform: translateY(-100vh);
       }
 
-      .show {
-        animation: show .7s ease forwards;
+      .reload-button, .list-button {
+        position: relative;
       }
 
-      @keyframes hide {
-        0% { transform: translateY(0); }
-        20% {  transform: translateY(15px); }
-        100% { transform: translateY(-100vh); }
+      #back-button {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background-color: var(--gray);
+        color: white;
+        padding: .5rem;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 6px;
       }
-      
-      @keyframes show {
-        0% { transform: translateY(-100vh); }
-        80% {  transform: translateY(15px); }
-        100% { transform: translateY(0); }
+
+      #ui {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .display-none {
+        display: none;
+      }
+
+      #ui.display-none {
+        display: none;
       }
     </style>
   </head>
 
   <body>
-    <div class="canvas-container">
+    <div id="canvas-container" class="canvas-container">
       <canvas id="root"></canvas>
     </div>
     <div id="grid-container" class="grid-container hidden"></div>
+    <div id="export-import-buttons">
+      <button id="export-button">Export</button>
+      <button id="import-button">Import</button>
+      <input id="import-file" type="file" hidden accept="application/json" />
+    </div>
+    <div id="ui"></div>
     <div id="menu" class="menu menu-close">
       <div id="menu-nav">
         <h5>Menu - Items</h5>
@@ -234,20 +277,15 @@
       </div>
       <div id="menu-items"></div>
     </div>
-    <div id="export-import-buttons">
-      <button id="export-button">Export</button>
-      <button id="import-button">Import</button>
-      <input id="import-file" type="file" hidden accept="application/json" />
-    </div>
     <div class="buttons">
-      <div id="list-button" class="list-button">
+      <div id="list-button" class="list-button item">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           xmlns:xlink="http://www.w3.org/1999/xlink"
           version="1.1"
           fill="white"
           width="24"
-          height="256"
+          height="24"
           viewBox="0 0 256 256"
           xml:space="preserve"
         >
@@ -361,7 +399,7 @@
           </g>
         </svg>
       </div>
-      <div id="reload-button" class="reload-button">
+      <div id="reload-button" class="reload-button item">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="white"
@@ -375,14 +413,14 @@
         </svg>
       </div>
     </div>
-    <img id="block" src="assets/block.png" style="display: none" />
-    <img id="apple" src="assets/apple.png" style="display: none" />
-    <img id="stone" src="assets/stone.png" style="display: none" />
-    <img id="worm" src="assets/worm.png" style="display: none" />
-    <img id="skewers" src="assets/skewers.png" style="display: none" />
-    <img id="hole" src="assets/hole.png" style="display: none" />
-    <img id="cloud" src="assets/cloud.png" style="display: none" />
-    <img id="start" src="assets/start.png" style="display: none" />
+    <button id="back-button">Back</button>
+    <img id="block" src="assets/sprites/block.png" style="display: none" />
+    <img id="apple" src="assets/sprites/apple.png" style="display: none" />
+    <img id="stone" src="assets/sprites/stone.png" style="display: none" />
+    <img id="worm" src="assets/sprites/worm.png" style="display: none" />
+    <img id="skewers" src="assets/sprites/skewers.png" style="display: none" />
+    <img id="hole" src="assets/sprites/hole.png" style="display: none" />
+    <img id="start" src="assets/sprites/start.png" style="display: none" />
     <script type="module" src="bundle.min.js"></script>
   </body>
 </html>

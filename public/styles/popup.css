@@ -1,0 +1,54 @@
+.item {
+    z-index: 99;
+}
+
+.item::before {
+    position: absolute;
+    width: max-content;
+    font-size: .8rem;
+    font-weight: bold;
+    padding: 0 .5rem;
+    height: 100%;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 88;
+    background-color: var(--black);
+    border-radius: 6px;
+}
+
+.item::after {
+    content: "";
+    z-index: 88;
+    position: absolute;
+    top: 100%; /* Posiciona justo debajo del ::before */
+    left: 50%;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid var(--black);
+}
+
+.item:after,.item:before {
+    opacity: 0;
+    transition: all .3s ease;
+}
+
+.item:hover:after {
+    opacity: 1;
+    transform: translate(-50%, -50px); /* Centra horizontalmente */
+}
+
+.item:hover:before {
+    opacity: 1;
+    transform: translateY(-50px);
+}
+
+
+.reload-button::before {
+    content: "Use 'R'";
+}
+
+.list-button::before {
+    content: "Use 'E'";
+}

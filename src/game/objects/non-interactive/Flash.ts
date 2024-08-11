@@ -1,7 +1,7 @@
-import Canvas from "../../motor/Canvas";
-import Item from "../../motor/Items/Item";
-import Square from "../../motor/Shape/Square";
-import game from "../game";
+import Canvas from "../../../motor/Canvas";
+import Item from "../../../motor/Items/Item";
+import Square from "../../../motor/Shape/Square";
+import game from "../../game";
 
 class Flash extends Item {
     private radius = 5

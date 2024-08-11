@@ -5,10 +5,6 @@ import Loop from "./Loop";
 export default class GameMap extends Loop {
     private itemConstructors: Class<Item>[] = []
 
-    constructor() {
-        super()
-    }
-
     public loadItemConstructor(...constuctor: Class<Item>[]) {
         this.itemConstructors.push(...constuctor)
 
@@ -20,8 +16,6 @@ export default class GameMap extends Loop {
     }
 
     public reset() {
-        super.reset()
-
         this.itemConstructors.forEach(
             constructor => (constructor as unknown as typeof Item).resetAllItems()
         )

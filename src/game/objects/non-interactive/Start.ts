@@ -1,5 +1,5 @@
-import Canvas from "../../motor/Canvas";
-import Square from "../../motor/Shape/Square";
+import Canvas from "../../../motor/Canvas";
+import Square from "../../../motor/Shape/Square";
 
 export default class Start extends Square {
     private velocityX: number

@@ -1,7 +1,7 @@
-import Item from "../motor/Items/Item"
 import IMAGES from "./images"
+import BaseObject from "./objects/BaseObject"
 
-export default class Menu {
+class Menu {
     private menu: HTMLDivElement
     private menuItems: HTMLDivElement
     private menuButton: HTMLDivElement
@@ -10,7 +10,7 @@ export default class Menu {
     private closed = true
     private mousePress = false
     private selectedItem?: HTMLImageElement
-    private gameItemSelected: Item | null = null
+    private gameItemSelected: BaseObject | null = null
 
     constructor() {
         this.menu = document.getElementById("menu") as HTMLDivElement
@@ -85,6 +85,8 @@ export default class Menu {
                 }
             }
         )
+
+        this.hide()
     }
 
     getFrameCoordinates(index: number, columns: number, size: number) {
@@ -101,7 +103,17 @@ export default class Menu {
         return this.gameItemSelected
     }
 
-    public setGameSelectedItem(gameItemSelected: Item | null) {
+    public hide() {
+        this.menu.classList.add("display-none")
+    }
+
+    public show() {
+        this.menu.classList.remove("display-none")
+    }
+
+    public setGameSelectedItem(gameItemSelected: BaseObject | null) {
         this.gameItemSelected = gameItemSelected
     }
 }
+
+export default new Menu()

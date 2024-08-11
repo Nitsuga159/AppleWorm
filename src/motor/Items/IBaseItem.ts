@@ -3,6 +3,8 @@ export interface ILocation {
     y: number
 }
 
+export type ILocationArray = [number, number]
+
 export interface ISize {
     width: number
     height: number

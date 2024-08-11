@@ -1,0 +1,31 @@
+.menu-interface {
+    position: absolute;
+    min-width: 300px;
+    width: 100%;
+    max-width: 40%;
+    display: flex;
+    gap: .5rem;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--black-opacity);
+    border-radius: 6px;
+    z-index: 1;
+}
+
+.menu-interface > h1 {
+    margin-bottom: 1rem;
+}
+
+.menu-interface > button {
+    padding: .4rem;
+    font-size: 1rem;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: var(--gray);
+    border: none;
+    outline: none;
+    border-radius: 6px;
+}

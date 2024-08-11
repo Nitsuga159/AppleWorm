@@ -1,10 +1,10 @@
-import Square from "../../motor/Shape/Square";
 import BaseObject from "./BaseObject";
 import CONFIG from "../constants";
-import game, { WormGame } from "../game";
+import { WormGame } from "../game";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
 import GameMap from "../../motor/GameMap";
 import WormPiece from "./WormPiece";
+import Worm from "../Worm";
 
 export default class Hole extends BaseObject {
 
@@ -14,6 +14,8 @@ export default class Hole extends BaseObject {
             width: CONFIG.SIZE,
             height: CONFIG.SIZE,
             paintPriority: 10,
+            canMove: true,
+            canRotate: false,
             frame: { index, textureId: "hole", columns: 1, totalFrames: 1, frameSize: 60, delX: -5, delY: -5, spin },
             group: [Hole]
         })
@@ -26,7 +28,7 @@ export default class Hole extends BaseObject {
         )
     }
 
-    public onCollide(headCube: WormPiece, game: GameMap) {
+    public onWormHeadCollide(headCube: WormPiece, game: GameMap) {
         const gameWorm = game as WormGame
         const worm = gameWorm.getWorm()!
         const reverseWorm: BaseObject[] = gameWorm.getWorm()!.getPieces().slice().reverse()
@@ -55,6 +57,8 @@ export default class Hole extends BaseObject {
             [worm.getHead().getFrameProperty("frameX")!, worm.getHead().getFrameProperty("frameY")!],
             [worm.getHead().getNextX(), worm.getHead().getNextY()]
         )
+
+        Worm.playAudio(Worm.WIN_AUDIOS)
 
         return true
     }

@@ -1,15 +1,16 @@
 import Gravity from "../motor/Functions/Gravity/Gravity";
-import BaseItem from "../motor/Items/BaseItem";
 import { DIRECTION } from "../motor/Items/DefaultCollisions";
-import Item from "../motor/Items/Item";
-import Loop from "../motor/Loop";
 import Block from "./objects/Block";
 import Stone from "./objects/Stone";
 import WormPiece from "./objects/WormPiece";
 import CONFIG from "./constants";
-import game, { WormGame } from "./game";
+import game from "./game";
+import { ILocationArray } from "../motor/Items/IBaseItem";
 
 export default class Worm {
+    private static readonly audio = new Audio()
+    public static readonly NO_MOVES_AUDIOS = ["ayudame-chavo", "pelotudo", "miau", "error", "dross", "spongebob-fail"]
+    public static readonly WIN_AUDIOS = ["boee", "terrorist-wins", "orchastra", "pvz"]
     private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
     private pieces: WormPiece[]
 
@@ -17,6 +18,12 @@ export default class Worm {
         pieces.forEach(p => game.add(p.addFunctionality(this.gravity)))
 
         this.pieces = pieces
+        Worm.audio.pause()
+    }
+
+    public static playAudio(names: string[]) {
+        Worm.audio.src = `assets/audios/${names[Math.floor(Math.random() * names.length)]}.mp3`
+        Worm.audio.play()
     }
 
     public setFalling(enabled: boolean) {
@@ -36,9 +43,12 @@ export default class Worm {
 
         this.checkQueueFrame()
         this.checkEndFrame()
+        if(!this.hasMoves()) {
+            Worm.playAudio(Worm.NO_MOVES_AUDIOS)
+        }
     }
 
-    public checkCollision() {
+    public update() {
         this.pieces.forEach(p => {
             p.getTransitionX()?.update()
             p.getTransitionY()?.update()
@@ -58,6 +68,7 @@ export default class Worm {
                 }
             })
         })
+        
     }
 
     public getPieces() {
@@ -86,7 +97,39 @@ export default class Worm {
         this.pieces.push(newPiece as WormPiece)
     }
 
-    public checkHeadFrame([prevX, prevY]: number[], [newX, newY]: number[]) {
+    
+    /**
+     * Check if all worm pieces are in the same X axe (vertical worm)
+    */
+   public isVertical() {
+       return this.getQueue().every(p => p.getX() === this.getHead().getX())
+    }
+    
+    public hasMoves() {
+        const head = this.getHead()
+        const [x, y] = head.getLocation()
+        
+        const left = game.getFrom([x - CONFIG.SIZE, y])
+        const right = game.getFrom([x + CONFIG.SIZE, y])
+        const top = game.getFrom([x, y - CONFIG.SIZE])
+        const bottom = game.getFrom([x, y + CONFIG.SIZE])
+        
+        if(this.isVertical() && left instanceof Block && right instanceof Block && !top) {
+            return false
+        }
+        
+        if(!left || !right || !bottom || !top) return true;
+        
+        for(let item of [top, bottom, left, right]) {
+            if(!(item instanceof WormPiece) && !(item instanceof Block)) {
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    public checkHeadFrame([prevX, prevY]: ILocationArray, [newX, newY]: ILocationArray) {
         const head = this.getHead()
 
         if (prevX !== newX) {
@@ -96,21 +139,13 @@ export default class Worm {
         }
     }
 
-    /**
-     * Check if all worm pieces are in the same X axe (vertical worm)
-     * @returns boolean
-     */
-    public isVertical() {
-        return this.getQueue().every(p => p.getX() === this.getHead().getX())
-    }
-
     public checkQueueFrame() {
         const pieces = this.getPieces().slice()
         for (let i = 1; i < pieces.length - 1; i++) {
             const [headNextX, headNextY] = pieces[i - 1].getNextLocation()
             const [nextX, nextY] = pieces[i].getNextLocation()
             const [queueNextX, queueNextY] = pieces[i + 1].getNextLocation()
-
+            
             //horizontal
             if (nextY === headNextY && nextY === queueNextY) {
                 pieces[i].setFrameProperty("index", 2)
@@ -160,6 +195,68 @@ export default class Worm {
         } else {
             pieces.at(-1)!.setFrameProperty("index", 3)
             pieces.at(-1)!.setFrameProperty("spin", 180)
+        }
+    }
+
+    public static orderFrames(pieces: WormPiece[]) {
+        for (let i = 1; i < pieces.length - 1; i++) {
+            const [headNextX, headNextY] = pieces[i - 1].getNextLocation()
+            const [nextX, nextY] = pieces[i].getNextLocation()
+            const [queueNextX, queueNextY] = pieces[i + 1].getNextLocation()
+            
+            //horizontal
+            if (nextY === headNextY && nextY === queueNextY) {
+                pieces[i].setFrameProperty("index", 2)
+                pieces[i].setFrameProperty("spin", 0)
+            } //vertical
+            else if (nextX === headNextX && nextX === queueNextX) {
+                pieces[i].setFrameProperty("index", 2)
+                pieces[i].setFrameProperty("spin", 90)
+            }
+            else if ((headNextX < nextX && queueNextY > nextY) || (queueNextX < nextX && headNextY > nextY)) {
+                pieces[i].setFrameProperty("index", 4)
+                pieces[i].setFrameProperty("spin", -90)
+                pieces[i].setFrameProperty("flip", false)
+            }
+            else if ((headNextY < nextY && queueNextX < nextX) || (queueNextY < nextY && headNextX < nextX)) {
+                pieces[i].setFrameProperty("index", 4)
+                pieces[i].setFrameProperty("spin", 0)
+                pieces[i].setFrameProperty("flip", false)
+            }
+            else if ((headNextX > nextX && queueNextY > nextY) || (queueNextX > nextX && headNextY > nextY)) {
+                pieces[i].setFrameProperty("index", 4)
+                pieces[i].setFrameProperty("spin", 90)
+                pieces[i].setFrameProperty("flip", true)
+            }
+            else {
+                pieces[i].setFrameProperty("index", 4)
+                pieces[i].setFrameProperty("spin", 0)
+                pieces[i].setFrameProperty("flip", true)
+            }
+        }
+
+        const [endNextX, endNextY] = pieces.at(-1)!.getNextLocation()
+        const [connNextX, connNextY] = pieces.at(-2)!.getNextLocation()
+        if (endNextX === connNextX && endNextY > connNextY) {
+            pieces.at(-1)!.setFrameProperty("index", 3)
+            pieces.at(-1)!.setFrameProperty("spin", -90)
+        } else if (endNextX === connNextX && endNextY < connNextY) {
+            pieces.at(-1)!.setFrameProperty("index", 3)
+            pieces.at(-1)!.setFrameProperty("spin", 90)
+        } else if (endNextY === connNextY && endNextX < connNextX) {
+            pieces.at(-1)!.setFrameProperty("index", 3)
+            pieces.at(-1)!.setFrameProperty("spin", 0)
+        } else {
+            pieces.at(-1)!.setFrameProperty("index", 3)
+            pieces.at(-1)!.setFrameProperty("spin", 180)
+        }
+    }
+
+    public static checkHeadFrame([prevX, prevY]: ILocationArray, [newX, newY]: ILocationArray, head: WormPiece) {
+        if (prevX !== newX) {
+            head.setFrameProperty("spin", newX < prevX ? -180 : 0)
+        } else {
+            head.setFrameProperty("spin", newY < prevY ? -90 : 90)
         }
     }
 }

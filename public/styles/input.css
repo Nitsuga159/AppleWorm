@@ -1,0 +1,40 @@
+input {
+    border: none;
+    outline: none;
+    padding: .25rem;
+    font-size: .9rem;
+    border-radius: 5px;
+    background-color: #121212;
+    color: white;
+}
+
+#input-form {
+    position: absolute;
+    min-width: 300px;
+    max-width: 500px;
+    width: 25%;
+    display: flex;
+    row-gap: 1rem;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1rem;
+    border-radius: 8px;
+    color: white;
+    background-color: #0a0a0ac8;
+    z-index: 10;
+}
+
+#input-form > .width-resolution, .height-resolution, .input-name {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+#input-form > button {
+    cursor: pointer;
+    padding: .2rem;
+    border-radius: 6px;
+    border: none;
+}

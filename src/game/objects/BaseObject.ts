@@ -3,24 +3,34 @@ import { ILocation } from "../../motor/Items/IBaseItem";
 import { IItem } from "../../motor/Items/IItem";
 import Transition from "../../motor/Items/Transition";
 import Square from "../../motor/Shape/Square";
+import CONFIG from "../constants";
 import WormPiece from "./WormPiece";
 
+export interface IBaseObject extends IItem {
+    canMove: boolean
+    canRotate: boolean
+}
+
 export default abstract class BaseObject extends Square {
+    private canRotate: boolean
+    private canMove: boolean
     private nextX: number = 0
     private nextY: number = 0
     private transitionX: Transition | null = null
     private transitionY: Transition | null = null
     public last: boolean = false
 
-    constructor(data: IItem) {
-        super(data)
+    constructor({ x, y, canMove, canRotate, ...data }: IBaseObject) {
+        super({ ...data, x: x * CONFIG.SIZE, y: y* CONFIG.SIZE })
 
-        this.nextX = data.x
-        this.nextY = data.y
+        this.nextX = x * CONFIG.SIZE
+        this.nextY = y * CONFIG.SIZE
+        this.canMove = canMove
+        this.canRotate = canRotate
     }
 
     public copy() {
-        return new (this.constructor as any)({ x: this.getX(), y: this.getY(), width: this.getWidth(), height: this.getHeight(), frame: { index: this.getFrameProperty("index"), frameSize: this.getFrameProperty("frameSize"), textureId: this.getFrameProperty("textureId") } })
+        return new (this.constructor as any)({ x: this.getX() / CONFIG.SIZE, y: this.getY() / CONFIG.SIZE, width: this.getWidth(), height: this.getHeight(), frame: { index: this.getFrameProperty("index"), frameSize: this.getFrameProperty("frameSize"), textureId: this.getFrameProperty("textureId") } })
     }
 
     public isMoving() {
@@ -30,6 +40,14 @@ export default abstract class BaseObject extends Square {
     public update(): void {
         this.transitionX?.update()
         this.transitionY?.update()
+    }
+
+    public getCanMove() {
+        return this.canMove
+    }
+
+    public getCanRotate() {
+        return this.canRotate
     }
 
     public getTransitionX() {
@@ -69,14 +87,16 @@ export default abstract class BaseObject extends Square {
     }
 
     /**
-     * Calculate the distance of X and Y between the this object and bo (Base Object)
-     * @param bo {BaseObject.class}
+     * Calculate the distance of X and Y between the 'this' - 'bo' (Base Object)
      */
     public getDistance(bo: BaseObject): [ distX: number, distY: number ] {
         return [this.getDistanceX(bo), this.getDistanceY(bo)]
     }
 
-    public setTransition({ next, dir, cb, onlyFrame, frames = 10 }: { next: number, dir: "X" | "Y", onlyFrame: boolean, cb?: () => void, frames?: number }) {
+    /**
+     * Use Transition class to make a smooth move from/to in X/Y direction
+     */
+    public setTransition({ next, dir, onEnd, onlyFrame, frames = 10 }: { next: number, dir: "X" | "Y", onlyFrame: boolean, onEnd?: () => void, frames?: number }) {
         const getterDirLocation = onlyFrame ? () => this.getFrameProperty(`frame${dir}`)! : () => this[`get${dir}`]()
         const setterDirLocation = onlyFrame ? (v: number) => this.setFrameProperty(`frame${dir}`, getterDirLocation() + v) : (v: number) => this[`add${dir}`](v)
 
@@ -86,28 +106,28 @@ export default abstract class BaseObject extends Square {
             frames,
             from: getterDirLocation(),
             to: next,
-                cb: setterDirLocation,
-                onEnd: () => {
-                    this[`transition${dir}`] = null
-                    cb && cb()
-                }
-            })
+            cb: setterDirLocation,
+            onEnd: () => {
+                this[`transition${dir}`] = null
+                onEnd && onEnd()
+            }
+        })
     }
 
-    public setTransitionFrameY(newY: number, cb?: () => void) {
+    public setTransitionFrameY(newY: number, onEnd?: () => void) {
         this.setTransition({
             next: newY,
             dir: "Y",
-            cb,
+            onEnd,
             onlyFrame: true
         })
     }
     
-    public setTransitionFrameX(newX: number, cb?: () => void) {
+    public setTransitionFrameX(newX: number, onEnd?: () => void) {
         this.setTransition({
             next: newX,
             dir: "X",
-            cb,
+            onEnd,
             onlyFrame: true
         })
     }
@@ -117,21 +137,21 @@ export default abstract class BaseObject extends Square {
                 next: newY,
                 dir: "Y",
                 onlyFrame,
-            cb: () => {
+                onEnd: () => {
                 this.setY(newY)
                 cb && cb()
             }
         })
     }
     
-    public setTransitionX(newX: number, onlyFrame: boolean, cb?: () => void) {
+    public setTransitionX(newX: number, onlyFrame: boolean, onEnd?: () => void) {
         this.setTransition({
                 next: newX,
                 dir: "X",
                 onlyFrame,
-            cb: () => {
+            onEnd: () => {
                 this.setX(newX)
-                cb && cb()
+                onEnd && onEnd()
             }
         })
     }
@@ -159,9 +179,12 @@ export default abstract class BaseObject extends Square {
                 });
             })
 
-            if(onFinish) onFinish()
+            onFinish && onFinish()
         }
     }
 
-    public abstract onCollide(headCube: WormPiece, game: GameMap): boolean
+    /**
+     * A function that invoke when the worm head collides with the item. Returns a boolean if can worm pass to the position of the object
+     */
+    public abstract onWormHeadCollide(headCube: WormPiece, game: GameMap): boolean
 }

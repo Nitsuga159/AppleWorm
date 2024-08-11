@@ -2,7 +2,7 @@ import Apple from "./game/objects/Apple";
 import BaseObject from "./game/objects/BaseObject";
 import Block from "./game/objects/Block";
 import Hole from "./game/objects/Hole";
-import Menu from "./game/Menu";
+import menu from "./game/Menu";
 import Skewers from "./game/objects/Skewers";
 import Stone from "./game/objects/Stone";
 import WormPiece from "./game/objects/WormPiece";
@@ -11,202 +11,282 @@ import game, { MODE, WormGame } from "./game/game";
 import GAME_OBJETS from "./game/gameObjects";
 import Canvas from "./motor/Canvas";
 import EventController from "./motor/EventController";
-import MouseMove from "./motor/Functions/MouseMove/MouseMove";
-import Worm from "./game/Worm";
-import Start from "./game/objects/Start";
+import MouseMove from "./motor/Functions/MouseMove/MouseMove"
+import Start from "./game/objects/non-interactive/Start";
 import Levels from "./game/Levels";
-import Flash from "./game/objects/Flash";
+import { Object } from "./game/interfaces/types";
+import Worm from "./game/Worm";
+import HTML from "./game/UI/HTML";
 
-Levels
-game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
+Canvas.init({ id: "root", width: 1280, height: 720 })
 
-Canvas.init({ id: "root", width: 1300, height: 820 })
+let gameInitialized = false
 
-const map: { [key: string]: number } = {
-    "ArrowLeft": -50,
-    "ArrowRight": 50,
-    "ArrowUp": -50,
-    "ArrowDown": 50,
+function initializeGame() {
+    if (gameInitialized) return;
+
+    gameInitialized = true
+
+    game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
+
+    const map: Object<number> = {
+        "ArrowLeft": -50,
+        "ArrowRight": 50,
+        "ArrowUp": -50,
+        "ArrowDown": 50,
+    }
+
+    document.addEventListener("keydown", (e) => {
+        const menuItem = menu.getGameSelectedItem()
+        if (e.key === "Backspace" && menuItem !== null) {
+            if (!(menuItem instanceof WormPiece)) return game.remove(menuItem!)
+
+            const index = WormPiece.getAllItems().findIndex(v => v === menuItem)
+            const items = WormPiece.getAllItems().splice(index)
+            items.forEach(i => game.remove(i))
+            Worm.orderFrames(WormPiece.getAllItems() as WormPiece[])
+        }
+        if (e.key === "g" && menuItem !== null && menuItem?.getCanRotate()) return menuItem!.rotate()
+
+        const worm = game.getWorm()!
+        if (!Levels.isHidden() || game.getStop() || typeof map[e.key] === "undefined" || worm.isMoving() || worm.isFalling() || game.getMode() === MODE.EDITOR) return;
+
+        let plus = (map as any)[e.key];
+        const addX = (e.key === "ArrowLeft" || e.key === "ArrowRight" ? plus : 0)
+        const addY = (e.key === "ArrowUp" || e.key === "ArrowDown" ? plus : 0)
+
+        const headCube = worm.getHead()
+        const [headX, headY] = headCube.getLocation()
+
+        if (addY < 0 && worm.isVertical()) return;
+
+        const item = game.getFrom([headX + addX, headY + addY]) as BaseObject
+
+        if (item instanceof BaseObject && !item.onWormHeadCollide(headCube, game)) {
+            return;
+        }
+
+        if (!(item instanceof Hole)) {
+            let prev: number[] = [headX, headY]
+            headCube.setFrameProperty("syncLocation", false)
+
+            if (addX) {
+                const duplicated = headCube.copy().setLocation(headX + addX, headY + addY)
+                duplicated.setOpacity(0)
+                game.add(duplicated)
+
+                headCube.setTransitionX(headX + plus, true, () => {
+                    item instanceof Apple && game.remove(item)
+                    headCube.setFrameProperty("syncLocation", true)
+                    game.remove(duplicated)
+
+                })
+            } else {
+                if (plus < 0) {
+                    headCube.setFrameProperty("syncLocation", true)
+                    headCube.setTransitionY(headY + plus, false, () => {
+                        item instanceof Apple && game.remove(item)
+                    })
+                } else {
+                    headCube.setTransitionY(headY + plus, true, () => {
+                        item instanceof Apple && game.remove(item)
+                        headCube.setFrameProperty("syncLocation", true)
+                    })
+                }
+            }
+
+            worm.getQueue().forEach((s, index) => {
+                s.setFrameProperty("syncLocation", false)
+                let aux = s.getLocation()
+                const cb = () => {
+                    index === worm.getQueue().length - 1 && !(item instanceof Skewers) && worm.setFalling(true)
+                    s.setFrameProperty("syncLocation", true)
+                }
+                s.setTransitionX(prev[0], true, cb)
+                s.setTransitionY(prev[1], true, cb)
+                prev = aux
+            })
+
+            worm.checkHeadFrame(
+                headCube.getLocation(),
+                [headCube.getNextX(), headCube.getNextY()]
+            )
+        }
+
+        worm.checkQueueFrame()
+        worm.checkEndFrame()
+    })
+
+    game.execute(() => {
+        game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
+        game.getWorm()?.update()
+
+        if (game.getStop()) return;
+
+        Skewers.hasCollision()
+
+        if (game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
+            return game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
+        }
+    })
+
+
+    EventController.addListener("mousedown", ({ clientX: x, clientY: y }) => {
+        if (game.getMode() !== MODE.EDITOR) return;
+
+        const gameItemSelected = game.getFrom(WormGame.floorCoords([x, y]))
+
+        if (gameItemSelected && menu.getGameSelectedItem() === gameItemSelected) {
+            menu.getGameSelectedItem()?.setIsDebug(false)
+            menu.setGameSelectedItem(null)
+
+            return;
+        } else if (gameItemSelected) {
+            menu.getGameSelectedItem()?.setIsDebug(false)
+            gameItemSelected.setIsDebug(true)
+            menu.setGameSelectedItem(gameItemSelected)
+            return;
+        }
+
+        if (!menu.getSelectedItem()) return;
+
+        const coords = [Math.floor(x / CONFIG.SIZE), Math.floor(y / CONFIG.SIZE)]
+
+        const { name, index } = menu.getSelectedItem()!.dataset
+
+        const item = new GAME_OBJETS[name as string]({
+            x: coords[0],
+            y: coords[1],
+            index: parseInt(index!),
+        })
+
+        if (item instanceof WormPiece && WormPiece.getAllItems().length > 1) {
+            if (WormPiece.getAllItems().length === 2) {
+                const last = WormPiece.getAllItems().at(-2) as WormPiece
+                const x = last.getDistanceX(item)
+                const y = last.getDistanceY(item)
+
+                Worm.checkHeadFrame(last.getLocation(), [last.getX() + x, last.getY() + y], last)
+            } else {
+                const last = WormPiece.getAllItems().at(-2) as WormPiece
+                const x = Math.abs(last.getDistanceX(item))
+                const y = Math.abs(last.getDistanceY(item))
+
+                if (x > 50 || y > 50 || (x !== 0 && y !== 0)) {
+                    return WormPiece.getAllItems().splice(WormPiece.getAllItems().length - 1, 1)
+                }
+
+            }
+            Worm.orderFrames(WormPiece.getAllItems() as WormPiece[])
+        } else if (item instanceof Stone) {
+            (item as Stone).getGravity().setIsEnabled(false)
+        }
+
+        if (item.getCanMove()) {
+            const instance = new MouseMove({
+                target: item,
+                encapsulate: true,
+                onNewLocation: (n) => {
+                    if (game.getFrom(WormGame.roundCoords([n.x, n.y]))) {
+                        item.setLocation(instance.getPrevLocation().x, instance.getPrevLocation().y)
+                    } else {
+                        item.setLocation(...(WormGame.roundCoords([n.x, n.y])))
+                    }
+                }
+            })
+        }
+
+        game.add(item)
+    })
 }
 
+document.addEventListener("DOMContentLoaded", async () => {
+    await HTML.injectHTML("menu")
 
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && menu.getGameSelectedItem() !== null) return game.remove(menu.getGameSelectedItem()!)
-    if (e.key === "g" && menu.getGameSelectedItem() !== null) return menu.getGameSelectedItem()!.rotate()
+    document?.addEventListener("click", async (e) => {
+        if (!(e.target instanceof HTMLButtonElement)) return;
 
-    const worm = game.getWorm()!
-    if (!Levels.isHidden() || game.getStop() || typeof map[e.key] === "undefined" || worm.isMoving() || worm.isFalling()) return;
-
-    let plus = (map as any)[e.key];
-    const addX = (e.key === "ArrowLeft" || e.key === "ArrowRight" ? plus : 0)
-    const addY = (e.key === "ArrowUp" || e.key === "ArrowDown" ? plus : 0)
-
-    const headCube = worm.getHead()
-    const [headX, headY] = headCube.getLocation()
-
-    if (addY < 0 && worm.isVertical()) return;
-    const item = game.getFrom([headX + addX, headY + addY]) as BaseObject
-
-    if (item instanceof BaseObject) {
-        const canPass = item.onCollide(headCube, game)
-
-        if (!canPass) return;
-    }
-
-    if (!(item instanceof Hole)) {
-        let prev: number[] = [headX, headY]
-
-
-        headCube.setFrameProperty("syncLocation", false)
-        if (addX) {
-            headCube.setTransitionX(headX + plus, true, () => {
-                if (item instanceof Apple) game.remove(item)
-                headCube.setFrameProperty("syncLocation", true)
-            })
-        } else {
-            if (plus < 0) {
-                headCube.setFrameProperty("syncLocation", true)
-                headCube.setTransitionY(headY + plus, false, () => {
-                    if (item instanceof Apple) game.remove(item)
-                })
-            } else {
-                headCube.setTransitionY(headY + plus, true, () => {
-                    if (item instanceof Apple) game.remove(item)
-                    headCube.setFrameProperty("syncLocation", true)
-                })
-            }
+        if (e.target.matches("#start")) {
+            game.setMode(MODE.NORMAL)
+            menu.hide()
+            Levels.show()
+            initializeGame()
+            HTML.getContainer().classList.add("display-none")
+            HTML.removeHTML()
+        } else if (e.target.matches("#editor")) {
+            game.setMode(MODE.EDITOR)
+            Levels.hide()
+            await HTML.injectHTML("input")
         }
+    })
+    
+    document.addEventListener("submit", (e) => {
+        e.preventDefault()
+        
+        const data = e.target as any
+        const width = parseInt(data.width.value)
+        const height = parseInt(data.height.value)
+        const name = data.name.value.toString()
+        
+        if(name.length <= 0 || name.length > 100 || width < 300 || height < 300 || width > 3000 || height > 2000) return;
 
-        worm.getQueue().forEach((s, index) => {
-            s.setFrameProperty("syncLocation", false)
-            let aux = s.getLocation()
-            s.setTransitionX(prev[0], true, () => {
-                index === worm.getQueue().length - 1 && !(item instanceof Skewers) && worm.setFalling(true)
-                s.setFrameProperty("syncLocation", true)
-            })
-            s.setTransitionY(prev[1], true, () => {
-                index === worm.getQueue().length - 1 && !(item instanceof Skewers) && worm.setFalling(true)
-                s.setFrameProperty("syncLocation", true)
-            })
-            prev = aux
-        })
-        worm.checkHeadFrame(
-            headCube.getLocation(),
-            [headCube.getNextX(), headCube.getNextY()]
-        )
-    }
+        Canvas.getCanvas().width = width
+        Canvas.getCanvas().height = height
+        game.setName(name)
+        game.resizeCanvas()
+        menu.show()
+        initializeGame()
+        HTML.removeHTML()
+        game.loadJSON({ name, resolution: { width, height }, items: { worm: [] } }, GAME_OBJETS)
+        HTML.getContainer().classList.add("display-none")
 
-    worm.checkQueueFrame()
-    worm.checkEndFrame()
-})
-
-const menu = new Menu()
-
-const ctx = Canvas.getCtx()
-const canvas = Canvas.getCanvas()
-const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-gradient.addColorStop(0.15, '#081325'); // 15% position
-gradient.addColorStop(0.50, '#030408'); // 50% position
-
-game.execute(() => {
-    // const canvas = Canvas.getCanvas()
-    // const ctx = Canvas.getCtx()
-    // ctx.save()
-
-    // // Apply gradient as fill style
-    // ctx.fillStyle = gradient;
-    // ctx.fillRect(0, 0, canvas.width, canvas.height);
-    // ctx.restore()
-
-    game.get().sort((a, b) => a.getPaintPriority() > b.getPaintPriority() || (a.getY() < b.getY() && a.getPaintPriority() === b.getPaintPriority()) || (a.getX() > b.getX() && a.getPaintPriority() === b.getPaintPriority()) ? 1 : -1)
-    game.getWorm()?.checkCollision()
-    Skewers.checkCollision()
-    if (game.getStop()) return;
-
-    if (game.getWorm()?.getPieces().every(p => p.getY() - 100 > Canvas.getCanvas().height)) {
-        return game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
-    }
-})
-
-game.setMode(MODE.EDITOR)
-
-EventController.addListener("mousedown", ({ clientX: x, clientY: y }) => {
-    if (game.getMode() !== MODE.EDITOR) return;
-    const gameItemSelected = game.getFrom(WormGame.floorCoords([x, y]))
-
-    if (gameItemSelected && menu.getGameSelectedItem() === gameItemSelected) {
-        menu.getGameSelectedItem()?.setIsDebug(false)
-        menu.setGameSelectedItem(null)
-
-        return;
-    } else if (gameItemSelected) {
-        menu.getGameSelectedItem()?.setIsDebug(false)
-        gameItemSelected.setIsDebug(true)
-        menu.setGameSelectedItem(gameItemSelected)
-        return;
-    }
-
-    if (!menu.getSelectedItem()) return;
-
-    const coords: [number, number] = [Math.floor(x / CONFIG.SIZE) * CONFIG.SIZE, Math.floor(y / CONFIG.SIZE) * CONFIG.SIZE]
-
-    const { name, index } = menu.getSelectedItem()!.dataset
-
-    const item = new GAME_OBJETS[name as string]({
-        x: coords[0],
-        y: coords[1],
-        index: parseInt(index!),
     })
 
-    const instance = new MouseMove({
-        target: item,
-        encapsulate: true,
-        onNewLocation: (n) => {
-            if (game.getFrom(WormGame.roundCoords([n.x, n.y]) as [number, number])) {
-                item.setLocation(instance.getPrevLocation().x, instance.getPrevLocation().y)
-            } else {
-                item.setLocation(...(WormGame.roundCoords([n.x, n.y]) as [number, number]))
-            }
+    //BUTTONS EXPORT - IMPORT
+    const exportButton = document.getElementById("export-button")
+    const importButton = document.getElementById("import-button")
+    const importFile = document.getElementById("import-file") as HTMLInputElement
+
+    exportButton?.addEventListener("click", () => {
+        const anchor = document.createElement("a")
+        const blob = new Blob([JSON.stringify(game.getJSON(GAME_OBJETS))], { type: 'application/json' });
+
+        anchor.href = URL.createObjectURL(blob)
+        anchor.download = game.getName()! + ".json"
+
+        anchor.click()
+
+        URL.revokeObjectURL(anchor.href)
+    })
+
+    importButton?.addEventListener("click", () => importFile?.click())
+
+    importFile?.addEventListener("change", async () => {
+        if (importFile.files?.length) {
+            game.loadJSON(JSON.parse(await importFile.files![0].text()), GAME_OBJETS)
         }
     })
 
-    game.add(item)
-})
+    //RELOAD BUTTON
+    const resetFunction = () => {
+        if(game.getLoadedJSON()) {
 
-//BUTTONS EXPORT - IMPORT
-const exportButton = document.getElementById("export-button")
-const importButton = document.getElementById("import-button")
-const importFile = document.getElementById("import-file") as HTMLInputElement
-
-exportButton?.addEventListener("click", () => {
-    const anchor = document.createElement("a")
-    const blob = new Blob([JSON.stringify(game.getJSON(GAME_OBJETS))], { type: 'application/json' });
-
-    anchor.href = URL.createObjectURL(blob)
-    anchor.download = game.getName()! + ".json"
-
-    anchor.click()
-
-    URL.revokeObjectURL(anchor.href)
-})
-
-importButton?.addEventListener("click", () => importFile?.click())
-
-importFile?.addEventListener("change", async () => {
-    if (importFile.files?.length) {
-        game.loadJSON(JSON.parse(await importFile.files![0].text()), GAME_OBJETS)
+            game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
+        }
     }
+    document.getElementById("reload-button")?.addEventListener("click", ()=> game.getMode() !== MODE.NONE && resetFunction())
+    document.addEventListener("keydown", (e) => e.key === "r" && game.getMode() !== MODE.NONE && resetFunction())
+
+    //RESIZE CANVAS
+    game.resizeCanvas();
+    window.addEventListener('resize', game.resizeCanvas);
+
+    document.getElementById("back-button")?.addEventListener("click", () => {
+        Levels.hide()
+        menu.hide()
+        game.reset()
+        HTML.injectHTML("menu")
+        HTML.getContainer().classList.remove("display-none")
+        game.setMode(MODE.NONE)
+    })
 })
-
-//reload button
-const reloadButton = document.getElementById("reload-button")
-
-reloadButton?.addEventListener("click", () => {
-    game.setStop(true).loadJSON(game.getLoadedJSON()!, GAME_OBJETS)
-})
-
-// Llama a la función al cargar la página
-game.resizeCanvas();
-
-// Llama a la función al cambiar el tamaño de la ventana
-window.addEventListener('resize', game.resizeCanvas);

@@ -1,8 +1,5 @@
 import Canvas from "../Canvas";
-import Gravity from "../Functions/Gravity/Gravity";
 import Item from "../Items/Item";
-import Transition from "../Items/Transition";
-import Loop from "../Loop";
 
 export default class Square extends Item {
     public static readonly DEFAULT_FILL = "#000"
@@ -12,6 +9,8 @@ export default class Square extends Item {
     }
 
     paint(ctx: CanvasRenderingContext2D): void {
+        ctx.globalAlpha = this.getOpacity()
+
         if(this.getFrameProperty("textureId")) {
             this.paintFrame(ctx)
         } else {

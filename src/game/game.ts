@@ -1,16 +1,17 @@
 import MouseMove from "../motor/Functions/MouseMove/MouseMove";
 import GameMap from "../motor/GameMap";
 import BaseItem from "../motor/Items/BaseItem";
-import Item from "../motor/Items/Item";
-import Loop from "../motor/Loop";
 import BaseObject from "./objects/BaseObject";
 import Worm from "./Worm";
 import WormPiece from "./objects/WormPiece";
 import CONFIG from "./constants";
-import { IPSeudoItem } from "./interfaces/IPseudoItem";
 import Canvas from "../motor/Canvas";
-import Start from "./objects/Start";
-import Flash from "./objects/Flash";
+import Start from "./objects/non-interactive/Start";
+import Flash from "./objects/non-interactive/Flash";
+import { IPSeudoItem } from "./interfaces/IPseudoItem";
+import { Class } from "./interfaces/Class";
+import { Object } from "./interfaces/types";
+import { ILocationArray } from "../motor/Items/IBaseItem";
 
 export interface JSONCoords {
     name: string,
@@ -23,11 +24,12 @@ export interface JSONCoords {
 
 export enum MODE {
     EDITOR,
-    NORMAL
+    NORMAL,
+    NONE
 }
 
 export class WormGame extends GameMap {
-    private mode: MODE = MODE.NORMAL
+    private mode: MODE = MODE.NONE
     private name?: string
     private worm?: Worm
     private json?: JSONCoords
@@ -83,37 +85,41 @@ export class WormGame extends GameMap {
         return this.stop
     }
 
-    public loadJSON(json: JSONCoords, gameObjects: any) {
+    public loadJSON(json: JSONCoords, gameObjects: Object<Class<BaseObject>>) {
         Flash.setOnHalf(() => {
             if (Object.keys(json.items).some(itemName => typeof gameObjects[itemName] === "undefined")) throw new Error("Invalid items")
             if (!json.items["worm"]) throw new Error("Worm is not defined")
 
             if (json.resolution) {
+                if(json.resolution.width > 3000 || json.resolution.height > 2000 || json.resolution.width < 300 || json.resolution.height < 300) {
+                    throw new Error("Invalid resolution")
+                }
+
                 Canvas.getCanvas().width = json.resolution.width
                 Canvas.getCanvas().height = json.resolution.height
             } else {
-                Canvas.getCanvas().width = 1200
+                Canvas.getCanvas().width = 1280
                 Canvas.getCanvas().height = 720
             }
 
-            Object.values(gameObjects).forEach(v => (v as typeof Item).resetAllItems())
+            Object.values(gameObjects).forEach(v => (v as unknown as typeof BaseObject).resetAllItems())
             this.get().forEach(v => v.automaticRemove() && this.remove(v))
             this.stop = false
             this.wonPiece = null
 
             this.name = json.name
 
-            const coors: any = {}
+            const coords: any = {}
             for (let itemKey in json.items) {
                 for (let { x, y } of json.items[itemKey]) {
-                    if (coors[x + "-" + y]) {
+                    if (coords[x + "-" + y]) {
                         throw new Error("Has repeated coords")
                     } else {
-                        coors[x + "-" + y] = 1
+                        coords[x + "-" + y] = 1
                     }
 
-                    if (x % CONFIG.SIZE !== 0 || y % CONFIG.SIZE !== 0) {
-                        throw new Error("Invalid size coords")
+                    if(parseInt(x.toString()) !== x || parseInt(y.toString()) !== y) {
+                        throw new Error("Invalid coords")
                     }
                 }
             }
@@ -126,7 +132,7 @@ export class WormGame extends GameMap {
                 for (let { x, y, index, spin, flip } of json.items[itemKey]) {
                     const item = new gameObjects[itemKey]({ x, y, index, spin, flip })
 
-                    if (this.mode === MODE.EDITOR) {
+                    if (this.mode === MODE.EDITOR && item.getCanMove()) {
                         const instance = new MouseMove({
                             target: item, encapsulate: true, onNewLocation: (n) => {
                                 if (game.get().some(i => BaseItem.matchLocation((WormGame.roundCoords([n.x, n.y]) as [number, number]), i.getLocation()))) {
@@ -166,9 +172,9 @@ export class WormGame extends GameMap {
         this.worm = worm
     }
 
-    getItemJSON(itemConstructor: typeof Item) {
-        return itemConstructor.getAllItems().map(i => {
-            const item = { x: i.getX(), y: i.getY(), index: i.getFrameProperty("index") } as any
+    getItemJSON(itemConstructor: Class<BaseObject>) {
+        return (itemConstructor as unknown as typeof BaseObject).getAllItems().map(i => {
+            const item = { x: i.getX() / CONFIG.SIZE, y: i.getY() / CONFIG.SIZE, index: i.getFrameProperty("index") } as any
 
             if (i.getFrameProperty("spin")) {
                 item.spin = i.getFrameProperty("spin")
@@ -182,15 +188,15 @@ export class WormGame extends GameMap {
         })
     }
 
-    getJSON(gameObjects: any) {
-        const json: JSONCoords = { name: this.name!, items: {} }
+    getJSON(gameObjects: Object<Class<BaseObject>>) {
+        const json: JSONCoords = { name: this.name!, resolution: { width: Canvas.getCanvas().width, height: Canvas.getCanvas().height }, items: {} }
 
         Object.keys(gameObjects).forEach(key => json.items[key] = this.getItemJSON(gameObjects[key]))
 
         return json
     }
 
-    public getFrom(location: [x: number, y: number]) {
+    public getFrom(location: ILocationArray) {
         for (let item of this.get()) {
             if (BaseItem.matchLocation(WormGame.floorCoords(location), WormGame.floorCoords(item.getLocation())) && item instanceof BaseObject) {
                 return item
@@ -220,12 +226,16 @@ export class WormGame extends GameMap {
         return Math.round(n / CONFIG.SIZE) * CONFIG.SIZE
     }
 
-    public static roundCoords([x, y]: number[]): [x: number, y: number] {
+    public static roundCoords([x, y]: ILocationArray): ILocationArray {
         return [this.roundCoord(x), this.roundCoord(y)]
     }
 
-    public static floorCoords([x, y]: number[]): [x: number, y: number] {
+    public static floorCoords([x, y]: ILocationArray): ILocationArray {
         return [this.floorCoord(x), this.floorCoord(y)]
+    }
+
+    public setName(name: string) {
+        this.name = name
     }
 }
 

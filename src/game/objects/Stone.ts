@@ -1,8 +1,5 @@
 import Gravity from "../../motor/Functions/Gravity/Gravity";
 import { DIRECTION } from "../../motor/Items/DefaultCollisions";
-import { IItem } from "../../motor/Items/IItem";
-import Loop from "../../motor/Loop";
-import Square from "../../motor/Shape/Square";
 import Apple from "./Apple";
 import BaseObject from "./BaseObject";
 import Block from "./Block";
@@ -12,10 +9,9 @@ import CONFIG from "../constants";
 import game, { WormGame } from "../game";
 import { IPSeudoItem } from "../interfaces/IPseudoItem";
 import GameMap from "../../motor/GameMap";
-import Skewers from "./Skewers";
 
 export default class Stone extends BaseObject {
-    private gravity = new Gravity({ velocity: CONFIG.GRAVITY })
+    private readonly gravity = new Gravity({ velocity: CONFIG.GRAVITY })
     private falling = false
 
     constructor({ index, spin, ...data }: IPSeudoItem) {
@@ -24,15 +20,19 @@ export default class Stone extends BaseObject {
             paintPriority: 11, 
             width: CONFIG.SIZE, 
             height: CONFIG.SIZE, 
+            canMove: true,
+            canRotate: false,
             frame: { index, textureId: "stone", columns: 1, frameSize: 55, spin },
             group: [Stone], 
             target: [WormPiece, Block, Apple, Stone, Hole] 
         })
 
         this.addFunctionality(this.gravity)
-
-        this.fill = "gray"
         this.falling = false
+    }
+
+    public getFalling() {
+        return this.falling
     }
 
     public getGravity() {
@@ -43,8 +43,11 @@ export default class Stone extends BaseObject {
         super.update()
 
         this.falling = true
+        
+        //detects collision while falling
         game.forEachItemConstructor(
             this.getTarget(), item => {
+                //collision with a lower item
                 if(item !== this && this.itemCollision(this, item) === DIRECTION.TOP) {
                     this.setY(item.getY() - this.getHeight())
                     this.falling = false
@@ -54,24 +57,28 @@ export default class Stone extends BaseObject {
         )
     }
 
-    public onCollide(headCube: WormPiece, game: GameMap): boolean {
-        if(this.falling) return false;
+    public onWormHeadCollide(headCube: WormPiece, game: GameMap): boolean {
+        if(this.falling) {
+            return false;
+        }
         
         const gameWorm = game as WormGame
-        const addX = WormGame.floorCoord(this.getX() - headCube.getX())
-        const addY = WormGame.floorCoord(this.getY() - headCube.getY())
+
+        const [addX, addY] = WormGame.floorCoords(this.getDistance(headCube))
 
         const item = gameWorm.getFrom([this.getX() + addX, this.getY() + addY])
-        if(item !== null && !(item instanceof Skewers)) return false;
-
-        this.getGravity().setIsEnabled(false);
-        if(addX) {
-            this.setTransitionX(this.getX() + addX, false, () => this.getGravity().setIsEnabled(true));
-        } else {
-            this.setTransitionY(this.getY() + addY, false, () => this.getGravity().setIsEnabled(true)); 
+        
+        if(this.getTarget().some(c => item instanceof c)) {
+            return false
         }
 
-        this.falling = true
+        this.gravity.setIsEnabled(false);
+
+        if(addX) {
+            this.setTransitionX(this.getX() + addX, false, () => this.gravity.setIsEnabled(true));
+        } else {
+            this.setTransitionY(this.getY() + addY, false, () => this.gravity.setIsEnabled(true)); 
+        }
 
         return true
     }

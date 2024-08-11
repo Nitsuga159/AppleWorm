@@ -13,6 +13,8 @@ export default class WormPiece extends BaseObject {
         super({
             ...data,
             paintPriority: 98,
+            canMove: false,
+            canRotate: false,
             width: CONFIG.SIZE,
             height: CONFIG.SIZE,
             frame: { index, textureId: "worm", columns: 2, frameSize: 50, spin },
@@ -26,24 +28,24 @@ export default class WormPiece extends BaseObject {
     }
 
     public copy(): WormPiece {
-        return new WormPiece({
-            x: this.getX(),
-            y: this.getY(),
-            index: this.getFrameProperty("index"),
-            spin: this.getFrameProperty("spin")
-        })
+        const copy = super.copy() as WormPiece
+
+        copy.setFrameProperty("index", this.getFrameProperty("index"))
+        copy.setFrameProperty("spin", this.getFrameProperty("spin"))
+
+        return copy
     }
 
-    public getSide(head: WormPiece, hole: Hole): { dir: "LEFT" | "RIGHT" | "BOTTOM" | "TOP", hole: [number, number]} {
-        if (head.getX() - hole.getX() < 0) return { dir: "LEFT", hole: [3 * Math.PI / 2, Math.PI / 2]};
-        if (head.getX() - hole.getX() > 0) return { dir: "RIGHT", hole: [Math.PI / 2, 3 * Math.PI / 2]};
-        if (head.getY() - hole.getY() < 0) return { dir: "TOP", hole: [0, Math.PI]};
-        
-        return { dir: "BOTTOM", hole: [Math.PI, Math.PI * 2]};
+    public getSide(head: WormPiece, hole: Hole): { dir: "LEFT" | "RIGHT" | "BOTTOM" | "TOP", hole: [number, number] } {
+        if (head.getX() - hole.getX() < 0) return { dir: "LEFT", hole: [3 * Math.PI / 2, Math.PI / 2] };
+        if (head.getX() - hole.getX() > 0) return { dir: "RIGHT", hole: [Math.PI / 2, 3 * Math.PI / 2] };
+        if (head.getY() - hole.getY() < 0) return { dir: "TOP", hole: [0, Math.PI] };
+
+        return { dir: "BOTTOM", hole: [Math.PI, Math.PI * 2] };
     }
 
     paint(ctx: CanvasRenderingContext2D): void {
-
+        //mask to hole
         if (game.getWonPiece() && this.last) {
             const pieces = game.getWonPiece()!.slice(0, -2)
             const hole = pieces.at(-1) as Hole
@@ -51,32 +53,42 @@ export default class WormPiece extends BaseObject {
             ctx.beginPath();
 
             const { dir, hole: holeShape } = this.getSide(pieces.at(-2)! as WormPiece, hole)
-            ctx.arc(hole.getX() + 25, hole.getY() + 25, 30, ...holeShape);
+            const radio = CONFIG.SIZE / 2
+            const holeRadio = hole.getFrameProperty("frameSize") / 2
+
+            ctx.arc(hole.getX() + radio, hole.getY() + radio, holeRadio, ...holeShape);
+
             const frameY = this.getFrameProperty("frameY")! + (this.getFrameProperty("delY") || 0)
             const frameX = this.getFrameProperty("frameX")! + (this.getFrameProperty("delX") || 0)
             const frameSize = this.getFrameProperty("frameSize")
 
             if (dir === "LEFT") {
-                ctx.lineTo(hole.getX() + 25, frameY + frameSize)
-                ctx.lineTo(frameX - 1, frameY + frameSize)
-                ctx.lineTo(frameX - 1, frameY)
+                ctx.lineTo(hole.getX() + radio, frameY + frameSize)
+                ctx.lineTo(frameX, frameY + frameSize)
+                ctx.lineTo(frameX, frameY)
                 ctx.lineTo(frameX + frameSize, frameY)
-            } else if(dir === "RIGHT") {
-                ctx.lineTo(hole.getX() + 25, frameY)
-                ctx.lineTo(frameX + frameSize + 1, frameY)
-                ctx.lineTo(frameX + frameSize + 1, frameY + frameSize + 5)
-                ctx.lineTo(frameX, frameY + frameSize + 5)
-            } else if(dir === "TOP") {
-                ctx.lineTo(frameX, hole.getY() + 25)
-                ctx.lineTo(frameX, frameY - 1)
+            } else if (dir === "RIGHT") {
+                ctx.lineTo(hole.getX() + radio, frameY)
+                ctx.lineTo(frameX + frameSize, frameY)
+                ctx.lineTo(frameX + frameSize, frameY + frameSize)
+                ctx.lineTo(frameX, frameY + frameSize)
+            } else if (dir === "TOP") {
+                ctx.lineTo(frameX, hole.getY() + radio)
+                ctx.lineTo(frameX, frameY)
                 ctx.lineTo(frameX + frameSize, frameY)
                 ctx.lineTo(frameX + frameSize, frameY + frameSize)
             } else {
-                ctx.lineTo(frameX + frameSize, hole.getY() + 25)
+                ctx.lineTo(frameX + frameSize, hole.getY() + radio)
                 ctx.lineTo(frameX + frameSize, frameY)
-                ctx.lineTo(frameX + frameSize, frameY + frameSize + 1)
-                ctx.lineTo(frameX, frameY + frameSize + 1)
+                ctx.lineTo(frameX + frameSize, frameY + frameSize)
+                ctx.lineTo(frameX, frameY + frameSize)
             }
+
+
+            // //Uncomment if you don't understand sh*t
+            // ctx.strokeStyle = "red"
+            // ctx.lineWidth = 4
+            // ctx.stroke()
 
             ctx.closePath()
             ctx.clip();
@@ -85,7 +97,7 @@ export default class WormPiece extends BaseObject {
         super.paint(ctx)
     }
 
-    public onCollide(_: WormPiece, __: GameMap): boolean {
+    public onWormHeadCollide(_: WormPiece, __: GameMap): boolean {
         return false
     }
 }
