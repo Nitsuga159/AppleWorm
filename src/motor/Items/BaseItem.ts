@@ -1,4 +1,4 @@
-import { IBounds, ILocation } from "./IBaseItem"
+import { IBounds, ILocation, ILocationArray } from "./IBaseItem"
 
 export default class BaseItem {
     private width: number
@@ -18,7 +18,7 @@ export default class BaseItem {
     public getX() {
         return this.x
     }
-    
+
     public getY() {
         return this.y
     }
@@ -69,7 +69,7 @@ export default class BaseItem {
         this.prevX = this.x
         this.prevY = this.y
         this.x = x
-        this.y = y 
+        this.y = y
 
         return this
     }
@@ -90,7 +90,7 @@ export default class BaseItem {
         this.prevX = this.x
         this.prevY = this.y
         this.x = x
-        this.y = y 
+        this.y = y
         this.width = width
         this.height = height
 
@@ -112,6 +112,33 @@ export default class BaseItem {
     public isInArea({ x, y }: ILocation) {
         return x >= this.getX() && x <= (this.getX() + this.getWidth()) && y >= this.getY() && y <= (this.getY() + this.getHeight())
     }
+
+    public contains([x, y]: ILocationArray) {
+        return (
+            x >= this.x &&
+            x <= this.x + this.width &&
+            y >= this.y &&
+            y <= this.y + this.height
+        );
+    }
+    
+    public intersects(range: IBounds) {
+        return !(
+            range.x > this.x + this.width ||
+            range.x + range.width < this.x ||
+            range.y > this.y + this.height ||
+            range.y + range.height < this.y
+        );
+    }
+
+    intersectsPoint(x: number, y: number) {
+        return (
+          x >= this.x &&
+          x <= this.x + this.width &&
+          y >= this.y &&
+          y <= this.y + this.height
+        );
+      }
 
     public static matchLocation(loc1: [x: number, y: number], loc2: [x: number, y: number]) {
         return loc1[0] === loc2[0] && loc1[1] === loc2[1]

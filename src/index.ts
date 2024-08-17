@@ -17,6 +17,12 @@ import Levels from "./game/Levels";
 import { Object } from "./game/interfaces/types";
 import Worm from "./game/Worm";
 import HTML from "./game/UI/HTML";
+import QuadTree from "./motor/Interactive/QuadTree";
+import BaseItem from "./motor/Items/BaseItem";
+import Square from "./motor/Shape/Square";
+import TreeElement from "./motor/Interactive/TreeElement";
+import Button from "./motor/Interactive/Button";
+import Container from "./motor/Interactive/Container";
 
 Canvas.init({ id: "root", width: 1280, height: 720 })
 
@@ -28,6 +34,43 @@ function initializeGame() {
     gameInitialized = true
 
     game.loadItemConstructor(Block, Stone, WormPiece, Skewers, Apple, Hole, Start)
+
+    // const tree = new QuadTree(new BaseItem({ x: 0, y: 0, width: 1280, height: 720 }), 4)
+    const tree = new TreeElement({ x: 0, y: 0, width: 1280, height: 720 })
+
+    EventController.addListener("click", ({ clientX, clientY }) => {
+        const x = tree.findMatches([clientX, clientY]).at(-1)
+
+        if(x instanceof Button) {
+            x.onClick()
+        }
+    })
+
+    let prev: Button | undefined
+
+    EventController.addListener("mousemove", ({ clientX, clientY }) => {
+        const x = tree.findLast([clientX, clientY])
+
+        console.log(x?.getFill())
+
+        if(x instanceof Button) {
+            x.onMouseEnter()
+            prev = x
+        } else if(prev) {
+            prev.onMouseLeave()
+            prev = undefined
+        }
+    })
+
+    const square4 = new Container({ width: 100, height: 80, x: 0, y: 0, fill: "yellow" })
+    const square5 = new Button({ width: 800, height: 60, x: 10, y: 10, fill: "pink" })
+    const square6 = new Button({ width: 20, height: 50, x: 15, y: 15, fill: "green" })
+
+    game.add(square4)
+
+    tree.addChild(square4)
+    square4.addChild(square5)
+    square4.addChild(square6)
 
     const map: Object<number> = {
         "ArrowLeft": -50,
